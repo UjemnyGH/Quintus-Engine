@@ -9,7 +9,7 @@ echo $PRNAME
 mkdir $PRNAME
 cd $PRNAME
 
-echo "echo \"To add more files edit Makefile file and add yours file to g++\"
+echo "echo \"To add more files edit run.sh file and add yours files to g++\"
 echo \"Compiling ${PRNAME}\"
 g++ -o ${PRNAME} src/main.cpp -lGL -lGLEW -lglfw -lpthread -lm
 echo \"Running ${PRNAME}\"
