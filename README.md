@@ -8,7 +8,7 @@ Here you have my public game engines on github (obviusly unfinished):
 [AwesomeV2](https://github.com/UjemnyGH/AwesomeV2)
 
 ----------
-~~To make new project~~
+### To make new project
 1. Go to projects using cd
 2. Type ./gen.sh in linux (there is no windows port yet)
 3. Type project name
