@@ -217,44 +217,21 @@ namespace qe {
         }
     };
 
+    struct QE_Texture {
+        uint32_t id;
+        bool created = false;
+
+        void Init() {
+            if(!created) {
+                created = true;
+            }
+        }
+    }
+
     typedef QE_Vao Vao;
     typedef QE_Vbo Vbo;
     typedef QE_Ebo Ebo;
     typedef QE_Shader Shader;
 }
-
-/*<?php
-session_start();
-
-$database = mysqli_connect("localhost", "root", "", "samochody");
-
-$mk = $_POST['marka'];
-$md = $_POST['model'];
-$rk = $_POST['rocznik'];
-$pj = $_POST['pojemnosc'];
-
-if($mk != NULL && $md != NULL && $rk != NULL && $pj != NULL) {
-    $result = mysqli_query($database, "INSERT INTO `spis`(`id`, `marka`, `model`, `rocznik`, `pojemnosc`) VALUES (NULL, '$mk', '$md', '$rk', '$pj');");
-}
-else {
-
-}
-
-mysqli_close($database);
-
-session_abort();
-?>*/
-
-/*<?php
-$database = mysqli_connect("localhost", "root", "", "samochody");
-
-$result = mysqli_query($database, "SELECT * FROM spis;");
-
-while($row = $result->fetch_row()) {
-    printf("<tr><th>%s</th><th>%s</th><th>%s</th><th>%s</th><th>%s</th></tr>", $row[0], $row[1], $row[3], $row[3], $row[4]);
-}
-
-mysqli_close($database);
-?>*/
 
 #endif

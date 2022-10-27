@@ -7,6 +7,7 @@ Here you have my public game engines on github (obviusly unfinished):
 [Awesome](https://github.com/UjemnyGH/Awesome)
 [AwesomeV2](https://github.com/UjemnyGH/AwesomeV2)
 
+----------
 ### Libraries used in project:
 1. GLFW
 2. GLEW

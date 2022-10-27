@@ -11,7 +11,7 @@ cd $PRNAME
 
 echo "echo \"To add more files edit run.sh file and add yours files to g++\"
 echo \"Compiling ${PRNAME}\"
-g++ -o ${PRNAME} src/main.cpp -lGL -lGLEW -lglfw -lpthread -lm
+g++ -o3 -std=c++2a -o ${PRNAME} src/main.cpp -lGL -lGLEW -lglfw -lpthread -lm
 echo \"Running ${PRNAME}\"
 ./${PRNAME}
 " > run.sh
@@ -35,8 +35,8 @@ void Game::Update() {
     // Code here
 }
 
-int main() {
+void Application() {
     Game game;
 
-    return 0;
+    game.run();
 }" > main.cpp

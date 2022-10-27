@@ -12,10 +12,11 @@ void Game::Start() {
 
 void Game::Update() {
     // Code here
+    std::cout << qe::Time::GetDeltaTime() << '\n';
 }
 
-int main() {
+void Application() {
     Game game;
 
-    return 0;
+    game.run();
 }

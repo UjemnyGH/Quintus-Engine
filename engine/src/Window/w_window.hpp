@@ -7,6 +7,7 @@
 #include <GLFW/glfw3.h>
 #include "../Core/c_layers.hpp"
 #include "../Core/c_engine_functions.hpp"
+#include "../Core/c_time.hpp"
 
 namespace qe {
     class QE_Window {
@@ -14,6 +15,10 @@ namespace qe {
         LayerHandler m_layer_handler;
         GLFWwindow* m_window;
         bool m_v_sync = false;
+        std::string m_title;
+        uint32_t m_width;
+        uint32_t m_height;
+        Time global_time;
 
     public:
         /**
@@ -23,7 +28,13 @@ namespace qe {
          * @param width 
          * @param height 
          */
-        QE_Window(std::string title = "Window", uint32_t width = 800, uint32_t height = 600) {
+        QE_Window(std::string title = "Window", uint32_t width = 800, uint32_t height = 600) : m_title(title), m_width(width), m_height(height) { }
+
+        /**
+         * @brief Runs window
+         * 
+         */
+        void run() {
             Awake();
 
             glfwInit();
@@ -32,7 +43,7 @@ namespace qe {
             glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 3);
             glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
 
-            m_window = glfwCreateWindow(width, height, title.c_str(), nullptr, nullptr);
+            m_window = glfwCreateWindow(m_width, m_height, m_title.c_str(), nullptr, nullptr);
 
             if(!m_window) {
                 qe_term("Window couldn`t be shown!");
@@ -51,6 +62,8 @@ namespace qe {
             }
 
             glEnable(GL_DEPTH_TEST);
+
+            AddLayer(&global_time);
 
             Start();
 

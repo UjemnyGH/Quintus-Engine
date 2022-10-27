@@ -1,6 +1,6 @@
-echo "To add more files edit Makefile file and add yours file to g++"
+echo "To add more files edit run.sh file and add yours files to g++"
 echo "Compiling Example"
-g++ -o Example src/main.cpp -lGL -lGLEW -lglfw -lpthread -lm
+g++ -o3 -std=c++2a -o Example src/main.cpp -lGL -lGLEW -lglfw -lpthread -lm
 echo "Running Example"
 ./Example
 
