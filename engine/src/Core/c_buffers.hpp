@@ -48,6 +48,7 @@ namespace qe {
          * 
          */
         ~QE_Vao() {
+            created = false;
             glDeleteVertexArrays(1, &m_id);
         }
     };
@@ -100,6 +101,7 @@ namespace qe {
          * 
          */
         ~QE_Vbo() {
+            created = false;
             glDeleteBuffers(1, &m_id);
         }
     };
@@ -147,6 +149,7 @@ namespace qe {
          * 
          */
         ~QE_Ebo() {
+            created = false;
             glDeleteBuffers(1, &m_id);
         }
     };
@@ -209,6 +212,7 @@ namespace qe {
          * 
          */
         ~QE_Shader() {
+            created = false;
             glDeleteProgram(m_id);
         }
     };

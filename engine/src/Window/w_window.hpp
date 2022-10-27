@@ -57,6 +57,8 @@ namespace qe {
             while(!glfwWindowShouldClose(m_window)) {
                 glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
+                m_layer_handler.AutoUpdate();
+
                 Update();
 
                 glfwPollEvents();
@@ -94,6 +96,20 @@ namespace qe {
          * 
          */
         virtual void Awake() {}
+
+        /**
+         * @brief Adds layer to layer heap
+         * 
+         * @param layer 
+         */
+        void AddLayer(Layer* layer) { m_layer_handler.AddLayer(layer); }
+
+        /**
+         * @brief Erase layer from layers heap
+         * 
+         * @param layer 
+         */
+        void EraseLayer(Layer* layer) { m_layer_handler.EraseLayer(layer); }
 
         /**
          * @brief Get the Window Ptr
