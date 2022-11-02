@@ -142,11 +142,11 @@ namespace qe {
     }
 
     template<class T>
-    size_t Search(std::vector<T> arr, T value, int optional_return_val = -1) {
-        uint32_t beg = arr.size() / 2;
-        uint32_t end = arr.size() / 2;
+    size_t Search(std::vector<T> arr, T value, size_t optional_return_val = -1) {
+        size_t beg = arr.size() / 2;
+        size_t end = arr.size() / 2;
 
-        for(uint32_t i = 0; i < arr.size() / 2; i++) {
+        for(size_t i = 0; i < arr.size() / 2; i++) {
             if(arr[end] == value) {
                 return end;
             }

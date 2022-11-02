@@ -9,15 +9,15 @@
 
 namespace qe {
     class QE_Layer {
-    private:
-        uint32_t m_id;
-        static uint32_t m_static_count;
+    protected:
         std::string m_layer_debug_name;
 
     public:
+        uint32_t m_id;
+        static uint32_t m_static_count;
         bool m_auto_start = false;
 
-        QE_Layer(std::string name = "Layer" + std::to_string(m_static_count)) : m_layer_debug_name(name) { m_id = m_static_count; m_static_count++; }
+        QE_Layer(std::string name = "Layer") : m_layer_debug_name(name) {}
 
         /**
          * @brief Call on start of new layer
@@ -51,13 +51,6 @@ namespace qe {
          */
         const uint32_t getId() { return m_id; }
 
-        /**
-         * @brief Get the Count object
-         * 
-         * @return const uint32_t 
-         */
-        const static uint32_t getCount() { return m_static_count; }
-
         ~QE_Layer() {}
     };
 
@@ -82,6 +75,13 @@ namespace qe {
 
                 if(layer->m_auto_start) {
                     layer->Start();
+
+                    if(m_layers.size() > 0) {
+                        layer->m_id = m_layers[m_layers.size() - 1]->m_id + 1;
+                    }
+                    else {
+                        layer->m_id = 0;
+                    }
                 }
 
             }

@@ -8,6 +8,7 @@
 #include "../Core/c_layers.hpp"
 #include "../Core/c_engine_functions.hpp"
 #include "../Core/c_time.hpp"
+#include "../Renderer/r_renderer.hpp"
 
 namespace qe {
     class QE_Window {
@@ -16,11 +17,45 @@ namespace qe {
         GLFWwindow* m_window;
         bool m_v_sync = false;
         std::string m_title;
-        uint32_t m_width;
-        uint32_t m_height;
-        Time global_time;
+
+        static float m_left;
+        static float m_right;
+        static float m_top;
+        static float m_bottom;
+
+        static void framebuffer_callback(GLFWwindow* window, int width, int height) {
+            glViewport(0, 0, width, height);
+
+            m_width = width;
+            m_height = height;
+
+            if(!m_orthographic) {
+                m_projection = glm::perspectiveFov(m_fov, (float)width, (float)height, m_near, m_far);
+            }
+            else {
+                if(width < height && height > 0) {
+                    m_projection = glm::ortho(m_left, m_right, m_bottom * height / width, m_top * height / width, m_near, m_far);
+                }
+                else if(width >= height && height > 0) {
+                    m_projection = glm::ortho(m_left * width / height, m_right * width / height, m_bottom, m_top, m_near, m_far);
+                }
+                else {
+                    m_projection = glm::ortho(m_left, m_right, m_bottom, m_top, m_near, m_far);
+                }
+            }
+        }
+
+    protected:
+        Time time;
 
     public:
+        static float m_fov;
+        static float m_far;
+        static float m_near;
+        static bool m_orthographic;
+        static uint32_t m_width;
+        static uint32_t m_height;
+
         /**
          * @brief Construct a new qe window object
          * 
@@ -28,7 +63,18 @@ namespace qe {
          * @param width 
          * @param height 
          */
-        QE_Window(std::string title = "Window", uint32_t width = 800, uint32_t height = 600) : m_title(title), m_width(width), m_height(height) { }
+        QE_Window(std::string title = "Window", uint32_t width = 800, uint32_t height = 600) : m_title(title) { 
+            QE_Window::m_left = -2.0f;
+            QE_Window::m_right = 2.0f;
+            QE_Window::m_top = 2.0f;
+            QE_Window::m_bottom = -2.0f;
+            QE_Window::m_fov = 70.0f;
+            QE_Window::m_far = 10000.0f;
+            QE_Window::m_near = 0.001f;
+            QE_Window::m_orthographic = false;
+            QE_Window::m_width = width;
+            QE_Window::m_height = height;
+        }
 
         /**
          * @brief Runs window
@@ -63,7 +109,9 @@ namespace qe {
 
             glEnable(GL_DEPTH_TEST);
 
-            AddLayer(&global_time);
+            AddLayer(&time);
+
+            glfwSetFramebufferSizeCallback(m_window, framebuffer_callback);
 
             Start();
 
@@ -85,6 +133,8 @@ namespace qe {
 
             glfwTerminate();
         }
+
+        virtual void Framebuffer() {}
 
         /**
          * @brief Called before main game loop
