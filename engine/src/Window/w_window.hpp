@@ -76,6 +76,23 @@ namespace qe {
             QE_Window::m_height = height;
         }
 
+        void UpdatePerspective() {
+            if(!m_orthographic) {
+                m_projection = glm::perspectiveFov(m_fov, (float)m_width, (float)m_height, m_near, m_far);
+            }
+            else {
+                if(m_width < m_height && m_height > 0) {
+                    m_projection = glm::ortho(m_left, m_right, m_bottom * m_height / m_width, m_top * m_height / m_width, m_near, m_far);
+                }
+                else if(m_width >= m_height && m_height > 0) {
+                    m_projection = glm::ortho(m_left * m_width / m_height, m_right * m_width / m_height, m_bottom, m_top, m_near, m_far);
+                }
+                else {
+                    m_projection = glm::ortho(m_left, m_right, m_bottom, m_top, m_near, m_far);
+                }
+            }
+        }
+
         /**
          * @brief Runs window
          * 

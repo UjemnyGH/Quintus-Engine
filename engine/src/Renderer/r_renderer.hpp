@@ -24,6 +24,8 @@ namespace qe
         Shader m_sh;
         Ebo m_ebo;
         std::vector<uint32_t> m_shaders;
+        uint32_t m_textures_amount = 0;
+        std::vector<uint32_t> m_textures_priority_queue;
 
         Rendered m_rendered;
         AxisHelper m_renderer_axis_helper;
@@ -83,6 +85,27 @@ namespace qe
 
             m_vao.Unbind();
             m_sh.Unbind();
+        }
+
+        void AddTexture(const std::string name) {
+            if(m_textures_amount < 32) {
+                m_textures[m_textures_amount].Bind(name, GL_REPEAT);
+                m_textures_amount++;
+            }
+            else if(m_textures_priority_queue.size() > 0) {
+                m_textures[m_textures_priority_queue[0]].Bind(name, GL_REPEAT);
+
+                m_textures_priority_queue.erase(m_textures_priority_queue.begin());
+            }
+            else {
+                m_textures[31].Bind(name, GL_REPEAT);
+            }
+        }
+
+        void RemoveTexture(uint32_t id) {
+            m_textures_priority_queue.push_back(id);
+            m_textures[id].~QE_Texture();
+            m_textures[id].Init();
         }
 
         virtual void Update() override {

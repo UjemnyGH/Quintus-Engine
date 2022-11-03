@@ -47,6 +47,7 @@ namespace qe
     };
 
     struct QE_Rendered {
+        std::vector<QE_RenderedData> m_original_data;
         std::vector<QE_RenderedData> m_data;
         std::vector<QE_AxisHelper> m_axis_helper;
         std::vector<uint32_t> m_data_sizes;
@@ -75,6 +76,8 @@ namespace qe
                 
                 m_data_sizes.push_back(data.m_vertices.size() / 3);
             }
+
+            m_texture_index.resize(m_data_end[m_data_end.size()]);
         }
 
         void PushData(QE_RenderedData data) {
@@ -96,7 +99,8 @@ namespace qe
 
             m_data_sizes.push_back(data.m_vertices.size() / 3);
 
-            m_texture_index.resize(m_texture_index.size() + (data.m_vertices.size() / 3));
+            m_texture_index.resize(m_data_end[m_data_end.size()]);
+            //m_texture_index.resize(m_texture_index.size() + (data.m_vertices.size() / 3));
         }
 
         void PopData(uint32_t id) {
