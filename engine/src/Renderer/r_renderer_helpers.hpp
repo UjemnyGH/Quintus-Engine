@@ -14,6 +14,13 @@ namespace qe
         float scale[3];
         float rotation[3];
 
+        /**
+         * @brief Construct a new axis helper object
+         * 
+         * @param p position
+         * @param s scale
+         * @param r rotation
+         */
         QE_AxisHelper(float p = 0.0f, float s = 1.0f, float r = 0.0f) {
             position[0] = position[1] = position[2] = p;
             scale[0] = scale[1] = scale[2] = s;
@@ -29,6 +36,10 @@ namespace qe
 
         std::vector<uint32_t> m_indices;
 
+        /**
+         * @brief Clears RenderedData struct
+         * 
+         */
         void Clear() {
             m_vertices.clear();
             m_color.clear();
@@ -37,6 +48,13 @@ namespace qe
             m_indices.clear();
         }
 
+        /**
+         * @brief Check if 2 RenderedDatas are equal
+         * 
+         * @param data 
+         * @return true 
+         * @return false 
+         */
         bool operator==(QE_RenderedData &data) {
             return std::equal(this->m_vertices.begin(), this->m_vertices.end(), data.m_vertices.begin(), data.m_vertices.end()) &&
                 std::equal(this->m_color.begin(), this->m_color.end(), data.m_color.begin(), data.m_color.end()) &&
@@ -55,6 +73,10 @@ namespace qe
         std::vector<float> m_texture_index;
         QE_RenderedData m_joined_data;
 
+        /**
+         * @brief Rejoin all data together to get one big object
+         * 
+         */
         void JoinData() {
             m_joined_data.Clear();
             m_data_sizes.clear();
@@ -77,10 +99,16 @@ namespace qe
                 m_data_sizes.push_back(data.m_vertices.size() / 3);
             }
 
-            m_texture_index.resize(m_data_end[m_data_end.size()]);
+            m_texture_index.resize(m_data_end[m_data_end.size() - 1]);
         }
 
+        /**
+         * @brief Push data to heap
+         * 
+         * @param data 
+         */
         void PushData(QE_RenderedData data) {
+            m_original_data.push_back(data);
             m_data.push_back(data);
             m_axis_helper.push_back(QE_AxisHelper());
 
@@ -99,21 +127,32 @@ namespace qe
 
             m_data_sizes.push_back(data.m_vertices.size() / 3);
 
-            m_texture_index.resize(m_data_end[m_data_end.size()]);
-            //m_texture_index.resize(m_texture_index.size() + (data.m_vertices.size() / 3));
+            m_texture_index.resize(m_data_end[m_data_end.size() - 1]);
         }
 
+        /**
+         * @brief Pop data from heap and rejoin by id
+         * 
+         * @param id 
+         */
         void PopData(uint32_t id) {
             m_data.erase(m_data.begin() + id);
+            m_original_data.erase(m_original_data.begin() + id);
             m_axis_helper.erase(m_axis_helper.begin() + id);
             
             JoinData();
         }
 
+        /**
+         * @brief Pop data from heap and rejoin by data
+         * 
+         * @param data 
+         */
         void PopData(QE_RenderedData data) {
             uint32_t index = Search(m_data, data);
 
             m_data.erase(m_data.begin() + index);
+            m_original_data.erase(m_original_data.begin() + index);
             m_axis_helper.erase(m_axis_helper.begin() + index);
             
             JoinData();
