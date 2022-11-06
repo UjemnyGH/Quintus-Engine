@@ -418,6 +418,36 @@ namespace qe
         }
 
         /**
+         * @brief Set the Color By ID
+         * 
+         * @param id 
+         * @param r 
+         * @param g 
+         * @param b 
+         * @param a 
+         */
+        void SetColorByID(uint32_t id, float r, float g, float b, float a) {
+            if( m_rendered.m_data[id].m_color[0] != r || 
+                m_rendered.m_data[id].m_color[1] != g || 
+                m_rendered.m_data[id].m_color[2] != b || 
+                m_rendered.m_data[id].m_color[3] != a) {
+
+                for(int i = 0; i < m_rendered.m_data_sizes[id]; i++) {
+                    m_rendered.m_data[id].m_color[i * 4 + 0] = m_rendered.m_joined_data.m_color[(m_rendered.m_data_end[id] - m_rendered.m_data_sizes[id]) + (i * 4 + 0)] = r;
+                    m_rendered.m_data[id].m_color[i * 4 + 1] = m_rendered.m_joined_data.m_color[(m_rendered.m_data_end[id] - m_rendered.m_data_sizes[id]) + (i * 4 + 1)] = g;
+                    m_rendered.m_data[id].m_color[i * 4 + 2] = m_rendered.m_joined_data.m_color[(m_rendered.m_data_end[id] - m_rendered.m_data_sizes[id]) + (i * 4 + 2)] = b;
+                    m_rendered.m_data[id].m_color[i * 4 + 3] = m_rendered.m_joined_data.m_color[(m_rendered.m_data_end[id] - m_rendered.m_data_sizes[id]) + (i * 4 + 3)] = a;
+                }
+
+                m_vao.Bind();
+
+                m_vbos[1].Bind(m_rendered.m_joined_data.m_color, 1, 4);
+
+                m_vao.Unbind();
+            }
+        }
+
+        /**
          * @brief Add model to heap
          * 
          * @param data 
