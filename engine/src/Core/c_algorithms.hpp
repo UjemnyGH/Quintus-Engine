@@ -141,6 +141,15 @@ namespace qe {
         return -1;
     }
 
+    /**
+     * @brief Quick and dirty search algorithm that search from middle to left and right at the same time
+     * 
+     * @tparam T 
+     * @param arr 
+     * @param value 
+     * @param optional_return_val 
+     * @return size_t 
+     */
     template<class T>
     size_t Search(std::vector<T> arr, T value, size_t optional_return_val = -1) {
         size_t beg = arr.size() / 2;
@@ -160,6 +169,43 @@ namespace qe {
         }
 
         return optional_return_val;
+    }
+
+    namespace math {
+        /**
+         * @brief It clamp valie between low and high
+         * 
+         * @tparam T 
+         * @param val 
+         * @param low 
+         * @param high 
+         * @return T 
+         */
+        template<class T>
+        T clamp(T val, T low, T high) {
+            if(val > low && val < high) {
+                return val;
+            }
+            else if(val < low) {
+                return low;
+            }
+            else if(val > high) {
+                return high;
+            }
+
+            return val;
+        }
+
+        /**
+         * @brief Cross function
+         * 
+         * @param a 
+         * @param b 
+         * @return glm::vec3 
+         */
+        glm::vec3 cross(glm::vec3 a, glm::vec3 b) {
+            return glm::vec3((a.y * b.z) - (a.z * b.y), (a.x * b.z) - (a.z * b.x), (a.y * b.x) - (a.x * b.y));
+        }
     }
 }
 

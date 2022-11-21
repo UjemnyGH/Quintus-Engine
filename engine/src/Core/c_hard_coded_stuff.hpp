@@ -24,6 +24,7 @@ namespace qe {
     "out vec2 Tex;\n"
     "out vec3 Nor;\n"
     "out float TexID;\n"
+    "out mat4 modelOut;\n"
     "void main() {\n"
     "gl_Position = (projection * view * model) * aPos;\n"
     "Pos = aPos;\n"
@@ -31,9 +32,24 @@ namespace qe {
     "Tex = aTex;\n"
     "Nor = aNor;\n"
     "TexID = aTexID;\n"
+    "modelOut = model;\n"
     "}\n\0";
 
-    shader_t fragment_shader = "#version 450 core\n"
+    shader_t color_fragment_shader = "#version 450 core\n"
+    "uniform sampler2D Textures[32];\n"
+    "uniform vec3 globalLight;\n"
+    "in vec4 Pos;\n"
+    "in vec4 Col;\n"
+    "in vec2 Tex;\n"
+    "in vec3 Nor;\n"
+    "in float TexID;\n"
+    "in mat4 modelOut;\n"
+    "out vec4 FragmentColor;\n"
+    "void main() {\n"
+    "FragmentColor = Col;\n"
+    "}\n\0";
+
+    shader_t texture_fragment_shader = "#version 450 core\n"
     "uniform sampler2D Textures[32];\n"
     "in vec4 Pos;\n"
     "in vec4 Col;\n"
@@ -42,7 +58,7 @@ namespace qe {
     "in float TexID;\n"
     "out vec4 FragmentColor;\n"
     "void main() {\n"
-    "FragmentColor = Col;\n"
+    "FragmentColor = texture(Textures[int(TexID)], Tex) * Col;\n"
     "}\n\0";
 
     const RenderedData cube = {
@@ -284,6 +300,71 @@ namespace qe {
             1, 4, 5,
             2, 3, 6,
             3, 6, 7,
+        }
+    };
+
+    const RenderedData square = {
+        {
+            1.0f, 1.0f, 0.0f,
+            -1.0f, 1.0f, 0.0f,
+            1.0f, -1.0f, 0.0f,
+
+            -1.0f, 1.0f, 0.0f,
+            1.0f, -1.0f, 0.0f,
+            -1.0f, -1.0f, 0.0f,
+        },
+        {
+            1.0f, 1.0f, 1.0f, 1.0f,
+            1.0f, 1.0f, 1.0f, 1.0f,
+            1.0f, 1.0f, 1.0f, 1.0f,
+            1.0f, 1.0f, 1.0f, 1.0f,
+            1.0f, 1.0f, 1.0f, 1.0f,
+            1.0f, 1.0f, 1.0f, 1.0f,
+        },
+        {
+            1.0f, 1.0f,
+            1.0f, 0.0f,
+            0.0f, 1.0f,
+
+            1.0f, 0.0f,
+            0.0f, 1.0f,
+            0.0f, 0.0f,
+        },
+        {
+            0.0f, 0.0f, 1.0f,
+            0.0f, 0.0f, 1.0f,
+        },
+        {
+            0
+        }
+    };
+
+    const RenderedData square_indices = {
+        {
+            1.0f, 1.0f, 0.0f,
+            -1.0f, 1.0f, 0.0f,
+            1.0f, -1.0f, 0.0f,
+            -1.0f, -1.0f, 0.0f,
+        },
+        {
+            1.0f, 1.0f, 1.0f, 1.0f,
+            1.0f, 1.0f, 1.0f, 1.0f,
+            1.0f, 1.0f, 1.0f, 1.0f,
+            1.0f, 1.0f, 1.0f, 1.0f
+        },
+        {
+            1.0f, 1.0f,
+            1.0f, 0.0f,
+            0.0f, 1.0f,
+            0.0f, 0.0f,
+        },
+        {
+            0.0f, 0.0f, 1.0f,
+            0.0f, 0.0f, 1.0f,
+        },
+        {
+            0, 1, 2,
+            1, 2, 3
         }
     };
 }

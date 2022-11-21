@@ -29,11 +29,15 @@ namespace qe
     };
 
     struct QE_RenderedData {
+        // vertices
         std::vector<float> m_vertices;
+        // color
         std::vector<float> m_color;
+        // texture coords
         std::vector<float> m_texture_coordinates;
+        // normals
         std::vector<float> m_normals;
-
+        // indices
         std::vector<uint32_t> m_indices;
 
         /**
@@ -78,28 +82,35 @@ namespace qe
          * 
          */
         void JoinData() {
-            m_joined_data.Clear();
-            m_data_sizes.clear();
-            m_data_end.clear();
+            if(!m_original_data.empty()) {
+                m_joined_data.Clear();
+                m_data_sizes.clear();
+                m_data_end.clear();
 
-            for(QE_RenderedData data : m_data) {
-                std::copy(data.m_vertices.begin(), data.m_vertices.end(), std::back_inserter(m_joined_data.m_vertices));
-                std::copy(data.m_color.begin(), data.m_color.end(), std::back_inserter(m_joined_data.m_color));
-                std::copy(data.m_texture_coordinates.begin(), data.m_texture_coordinates.end(), std::back_inserter(m_joined_data.m_texture_coordinates));
-                std::copy(data.m_normals.begin(), data.m_normals.end(), std::back_inserter(m_joined_data.m_normals));
-                std::copy(data.m_indices.begin(), data.m_indices.end(), std::back_inserter(m_joined_data.m_indices));
+                for(QE_RenderedData data : m_data) {
+                    std::copy(data.m_vertices.begin(), data.m_vertices.end(), std::back_inserter(m_joined_data.m_vertices));
+                    std::copy(data.m_color.begin(), data.m_color.end(), std::back_inserter(m_joined_data.m_color));
+                    std::copy(data.m_texture_coordinates.begin(), data.m_texture_coordinates.end(), std::back_inserter(m_joined_data.m_texture_coordinates));
+                    std::copy(data.m_normals.begin(), data.m_normals.end(), std::back_inserter(m_joined_data.m_normals));
+                    std::copy(data.m_indices.begin(), data.m_indices.end(), std::back_inserter(m_joined_data.m_indices));
 
-                if (m_data_end.size() == 0) {
-                    m_data_end.push_back(data.m_vertices.size() / 3);
+                    if (m_data_end.size() == 0) {
+                        m_data_end.push_back(data.m_vertices.size() / 3);
+                    }
+                    else {
+                        m_data_end.push_back(data.m_vertices.size() / 3 + m_data_end[m_data_end.size() - 1]);
+                    }
+                    
+                    m_data_sizes.push_back(data.m_vertices.size() / 3);
                 }
-                else {
-                    m_data_end.push_back(data.m_vertices.size() / 3 + m_data_end[m_data_end.size() - 1]);
-                }
-                
-                m_data_sizes.push_back(data.m_vertices.size() / 3);
+
+                m_texture_index.resize(m_data_end[m_data_end.size() - 1]);
             }
-
-            m_texture_index.resize(m_data_end[m_data_end.size() - 1]);
+            else {
+                m_joined_data.Clear();
+                m_data_sizes.clear();
+                m_data_end.clear();
+            }
         }
 
         /**

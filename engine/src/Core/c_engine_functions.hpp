@@ -30,7 +30,7 @@ namespace qe
         std::cerr << msg << std::endl;
     }
 
-    uint32_t LoadShader(std::string path, ShaderType shader_type) {
+    uint32_t LoadShaderFromPath(std::string path, ShaderType shader_type) {
         std::ifstream fin(path, std::ios::binary | std::ios::ate);
 
         if(fin.bad()) {
@@ -44,8 +44,8 @@ namespace qe
         uint32_t lenght = static_cast<uint32_t>(fin.tellg());
         fin.seekg(std::ios::beg);
 
-        char* src_buffer = new char[lenght];
-        fin.read(src_buffer, lenght - 1);
+        char* src_buffer = new char[(lenght + 1) * sizeof(char)];
+        fin.read(src_buffer, lenght);
         src_buffer[lenght] = '\0';
         fin.close();
 
@@ -58,6 +58,10 @@ namespace qe
         glCompileShader(shader);
 
         return shader;
+    }
+
+    uint32_t LoadShader(std::string path, ShaderType shader_type) {
+        return LoadShaderFromPath(path, shader_type);
     }
 
     uint32_t LoadShader(shader_t shader, ShaderType shader_type) {

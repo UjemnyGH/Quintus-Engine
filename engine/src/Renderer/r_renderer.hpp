@@ -13,8 +13,9 @@
 
 namespace qe
 {
-    glm::mat4 m_projection = glm::mat4(1.0f);
-    glm::mat4 m_view = glm::mat4(1.0f);
+    glm::mat4 g_projection = glm::mat4(1.0f);
+    glm::mat4 g_view = glm::mat4(1.0f);
+    glm::vec3 g_globalLight = glm::vec3(1.0f, 1.0f, 1.0f);
 
     class QE_Renderer : public Layer {
     private:
@@ -137,6 +138,12 @@ namespace qe
             m_textures_amount--;
         }
 
+        void SetModelTexture(uint32_t model_id, uint32_t texture_id) {
+            for(int i = m_rendered.m_data_sizes[model_id]; i < m_rendered.m_data_end[model_id]; i++) {
+                m_rendered.m_texture_index[i] = static_cast<float>(texture_id);
+            }
+        }
+
         /**
          * @brief Update (render) renderer stuff
          * 
@@ -179,9 +186,10 @@ namespace qe
                 m_textures[30].Bind(30);
                 m_textures[31].Bind(31);
 
-                glUniformMatrix4fv(glGetUniformLocation(m_sh.m_id, "projection"), 1, GL_FALSE, glm::value_ptr(m_projection));
+                glUniformMatrix4fv(glGetUniformLocation(m_sh.m_id, "projection"), 1, GL_FALSE, glm::value_ptr(g_projection));
                 glUniformMatrix4fv(glGetUniformLocation(m_sh.m_id, "model"), 1, GL_FALSE, glm::value_ptr(m_model));
-                glUniformMatrix4fv(glGetUniformLocation(m_sh.m_id, "view"), 1, GL_FALSE, glm::value_ptr(m_view));
+                glUniformMatrix4fv(glGetUniformLocation(m_sh.m_id, "view"), 1, GL_FALSE, glm::value_ptr(g_view));
+                glUniform3f(glGetUniformLocation(m_sh.m_id, "globalLight"), g_globalLight.x, g_globalLight.y, g_globalLight.z);
 
                 if(!m_with_indices & m_triangles) {
                     glDrawArrays(GL_TRIANGLES, 0, m_rendered.m_joined_data.m_vertices.size() * 2);
@@ -529,6 +537,44 @@ namespace qe
          */
         void SetRendered(Rendered data) {
             m_rendered = data;
+        }
+
+        /**
+         * @brief Get the Model Position object
+         * 
+         * @param id model ID
+         * @return glm::vec3 
+         */
+        glm::vec3 GetModelPosition(uint32_t id) {
+            return glm::vec3(m_rendered.m_axis_helper[id].position[0], m_rendered.m_axis_helper[id].position[1], m_rendered.m_axis_helper[id].position[2]);
+        }
+
+        /**
+         * @brief Get the Model Scale object
+         * 
+         * @param id model ID
+         * @return glm::vec3 
+         */
+        glm::vec3 GetModelScale(uint32_t id) {
+            return glm::vec3(m_rendered.m_axis_helper[id].scale[0], m_rendered.m_axis_helper[id].scale[1], m_rendered.m_axis_helper[id].scale[2]);
+        }
+
+        /**
+         * @brief Get the Model Rotation object
+         * 
+         * @param id model ID
+         * @return glm::vec3 
+         */
+        glm::vec3 GetModelRotation(uint32_t id) {
+            return glm::vec3(m_rendered.m_axis_helper[id].rotation[0], m_rendered.m_axis_helper[id].rotation[1], m_rendered.m_axis_helper[id].rotation[2]);
+        }
+
+        /**
+         * @brief Debug info on public bool variables (m_render, m_with_indices, m_triangles)
+         * 
+         */
+        void __debug_public_info() {
+            printf("Render: %d, Triangles: %d, Indices: %d\n", m_render, m_triangles, m_with_indices);
         }
 
         /**
