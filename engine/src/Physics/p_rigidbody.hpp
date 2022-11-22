@@ -18,6 +18,7 @@ namespace qe {
         float m_friction = 1.0f;
         float m_friction_coefficient = 1.0f;
         float m_angular_friction = 1.0f;
+        float m_bouyency = 0.0f;
         float m_mass = 1.0f;
         float m_force = 0.0f;
         float m_down_force = 0.0f;

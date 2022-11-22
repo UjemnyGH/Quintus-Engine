@@ -171,9 +171,65 @@ namespace qe {
         return optional_return_val;
     }
 
+    /**
+     * @brief Returns closest of 2 values
+     * 
+     * @tparam T 
+     * @param val 
+     * @param a 
+     * @param b 
+     * @return T 
+     */
+    template<typename T>
+    T closest(T val, T a, T b) {
+        return abs(val - a) > abs(val - b) ? b : a;
+    }
+
+    /**
+     * @brief Return closest from vector
+     * 
+     * @tparam T 
+     * @param val 
+     * @param data 
+     * @return T 
+     */
+    template<typename T>
+    T closestVector(T val, std::vector<T> data) {
+        uint32_t closest_index = 0;
+
+        for(uint32_t i = 0; i < data.size(); i++) {
+            if(abs(val - data[i]) < abs(val - data[closest_index])) {
+                closest_index = i;
+            }
+        }
+
+        return data[closest_index];
+    }
+
+    /**
+     * @brief Return index of closest from vector
+     * 
+     * @tparam T 
+     * @param val 
+     * @param data 
+     * @return uint32_t 
+     */
+    template<typename T>
+    uint32_t closestVectorIndex(T val, std::vector<T> data) {
+        uint32_t closest_index = 0;
+
+        for(uint32_t i = 0; i < data.size(); i++) {
+            if(abs(val - data[i]) < abs(val - data[closest_index])) {
+                closest_index = i;
+            }
+        }
+
+        return closest_index;
+    }
+
     namespace math {
         /**
-         * @brief It clamp valie between low and high
+         * @brief It clamp value between low and high
          * 
          * @tparam T 
          * @param val 

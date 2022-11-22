@@ -98,16 +98,17 @@ void Game::input() {
         }
     }
 
-    printf("Velocities: %f %f %f\n", playerVelocity.x, playerVelocity.y, playerVelocity.z);
+    //printf("Velocities: %f %f %f\n", playerVelocity.x, playerVelocity.y, playerVelocity.z);
 }
 
 void Game::Start() {
     // Code here
+
     Game::m_far = 10000.0f;
     glfwSetCursorPosCallback(Game::getWindowPtr(), mouse);
 
     qe::ModelLoader ml;
-    ml.m_debug = true;
+    ml.m_debug = false;
 
     ml.LoadModelUnindexed("data/models/test_cube.obj", qe::ModelType::OBJ);
 
