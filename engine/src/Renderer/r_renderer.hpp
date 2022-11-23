@@ -105,6 +105,7 @@ namespace qe
             m_sh.Unbind();
         }
 
+        // FIXME: Adding more than 1 texture can be buggy
         /**
          * @brief Add texture to textures heap
          * 
@@ -138,6 +139,12 @@ namespace qe
             m_textures_amount--;
         }
 
+        /**
+         * @brief Set the Model Texture object
+         * 
+         * @param model_id 
+         * @param texture_id 
+         */
         void SetModelTexture(uint32_t model_id, uint32_t texture_id) {
             for(int i = m_rendered.m_data_sizes[model_id]; i < m_rendered.m_data_end[model_id]; i++) {
                 m_rendered.m_texture_index[i] = static_cast<float>(texture_id);
@@ -222,9 +229,9 @@ namespace qe
             m_renderer_axis_helper.position[2] = z;
 
             m_model = glm::translate(glm::mat4(1.0f), glm::vec3(m_renderer_axis_helper.position[0], m_renderer_axis_helper.position[1], m_renderer_axis_helper.position[2]));
-            m_model = glm::rotate(m_model, glm::radians(m_renderer_axis_helper.rotation[0]), glm::vec3(1.0f, 0.0f, 0.0f));
-            m_model = glm::rotate(m_model, glm::radians(m_renderer_axis_helper.rotation[1]), glm::vec3(0.0f, 1.0f, 0.0f));
-            m_model = glm::rotate(m_model, glm::radians(m_renderer_axis_helper.rotation[2]), glm::vec3(0.0f, 0.0f, 1.0f));
+            m_model = glm::rotate(m_model, qe::math::to_radians(m_renderer_axis_helper.rotation[0]), glm::vec3(1.0f, 0.0f, 0.0f));
+            m_model = glm::rotate(m_model, qe::math::to_radians(m_renderer_axis_helper.rotation[1]), glm::vec3(0.0f, 1.0f, 0.0f));
+            m_model = glm::rotate(m_model, qe::math::to_radians(m_renderer_axis_helper.rotation[2]), glm::vec3(0.0f, 0.0f, 1.0f));
             m_model = glm::scale(m_model, glm::vec3(m_renderer_axis_helper.scale[0], m_renderer_axis_helper.scale[1], m_renderer_axis_helper.scale[2]));
         }
 
@@ -241,9 +248,9 @@ namespace qe
             m_renderer_axis_helper.scale[2] = z;
 
             m_model = glm::translate(glm::mat4(1.0f), glm::vec3(m_renderer_axis_helper.position[0], m_renderer_axis_helper.position[1], m_renderer_axis_helper.position[2]));
-            m_model = glm::rotate(m_model, glm::radians(m_renderer_axis_helper.rotation[0]), glm::vec3(1.0f, 0.0f, 0.0f));
-            m_model = glm::rotate(m_model, glm::radians(m_renderer_axis_helper.rotation[1]), glm::vec3(0.0f, 1.0f, 0.0f));
-            m_model = glm::rotate(m_model, glm::radians(m_renderer_axis_helper.rotation[2]), glm::vec3(0.0f, 0.0f, 1.0f));
+            m_model = glm::rotate(m_model, qe::math::to_radians(m_renderer_axis_helper.rotation[0]), glm::vec3(1.0f, 0.0f, 0.0f));
+            m_model = glm::rotate(m_model, qe::math::to_radians(m_renderer_axis_helper.rotation[1]), glm::vec3(0.0f, 1.0f, 0.0f));
+            m_model = glm::rotate(m_model, qe::math::to_radians(m_renderer_axis_helper.rotation[2]), glm::vec3(0.0f, 0.0f, 1.0f));
             m_model = glm::scale(m_model, glm::vec3(m_renderer_axis_helper.scale[0], m_renderer_axis_helper.scale[1], m_renderer_axis_helper.scale[2]));
         }
 
@@ -260,9 +267,9 @@ namespace qe
             m_renderer_axis_helper.rotation[2] = z;
 
             m_model = glm::translate(glm::mat4(1.0f), glm::vec3(m_renderer_axis_helper.position[0], m_renderer_axis_helper.position[1], m_renderer_axis_helper.position[2]));
-            m_model = glm::rotate(m_model, glm::radians(m_renderer_axis_helper.rotation[0]), glm::vec3(1.0f, 0.0f, 0.0f));
-            m_model = glm::rotate(m_model, glm::radians(m_renderer_axis_helper.rotation[1]), glm::vec3(0.0f, 1.0f, 0.0f));
-            m_model = glm::rotate(m_model, glm::radians(m_renderer_axis_helper.rotation[2]), glm::vec3(0.0f, 0.0f, 1.0f));
+            m_model = glm::rotate(m_model, qe::math::to_radians(m_renderer_axis_helper.rotation[0]), glm::vec3(1.0f, 0.0f, 0.0f));
+            m_model = glm::rotate(m_model, qe::math::to_radians(m_renderer_axis_helper.rotation[1]), glm::vec3(0.0f, 1.0f, 0.0f));
+            m_model = glm::rotate(m_model, qe::math::to_radians(m_renderer_axis_helper.rotation[2]), glm::vec3(0.0f, 0.0f, 1.0f));
             m_model = glm::scale(m_model, glm::vec3(m_renderer_axis_helper.scale[0], m_renderer_axis_helper.scale[1], m_renderer_axis_helper.scale[2]));
         }
 
@@ -474,6 +481,7 @@ namespace qe
             m_vao.Unbind();
         }
 
+        // FIXME: Fix removeing last model 
         /**
          * @brief Remove model from heap by data
          * 
@@ -545,8 +553,8 @@ namespace qe
          * @param id model ID
          * @return glm::vec3 
          */
-        glm::vec3 GetModelPosition(uint32_t id) {
-            return glm::vec3(m_rendered.m_axis_helper[id].position[0], m_rendered.m_axis_helper[id].position[1], m_rendered.m_axis_helper[id].position[2]);
+        math::Vector<float> GetModelPosition(uint32_t id) {
+            return math::Vector<float>(m_rendered.m_axis_helper[id].position[0], m_rendered.m_axis_helper[id].position[1], m_rendered.m_axis_helper[id].position[2]);
         }
 
         /**
@@ -555,8 +563,8 @@ namespace qe
          * @param id model ID
          * @return glm::vec3 
          */
-        glm::vec3 GetModelScale(uint32_t id) {
-            return glm::vec3(m_rendered.m_axis_helper[id].scale[0], m_rendered.m_axis_helper[id].scale[1], m_rendered.m_axis_helper[id].scale[2]);
+        math::Vector<float> GetModelScale(uint32_t id) {
+            return math::Vector<float>(m_rendered.m_axis_helper[id].scale[0], m_rendered.m_axis_helper[id].scale[1], m_rendered.m_axis_helper[id].scale[2]);
         }
 
         /**
@@ -565,8 +573,8 @@ namespace qe
          * @param id model ID
          * @return glm::vec3 
          */
-        glm::vec3 GetModelRotation(uint32_t id) {
-            return glm::vec3(m_rendered.m_axis_helper[id].rotation[0], m_rendered.m_axis_helper[id].rotation[1], m_rendered.m_axis_helper[id].rotation[2]);
+        math::Vector<float> GetModelRotation(uint32_t id) {
+            return math::Vector<float>(m_rendered.m_axis_helper[id].rotation[0], m_rendered.m_axis_helper[id].rotation[1], m_rendered.m_axis_helper[id].rotation[2]);
         }
 
         /**

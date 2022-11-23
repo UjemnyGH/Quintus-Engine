@@ -65,16 +65,34 @@ namespace qe {
             return false;   
         }
 
+        // TODO: Point to plane collisions
         bool CheckPointToPlane(Collider* collider, bool this_objects_as_aabb = true) {
             bool collX, collY, collZ;
             
             if(this_objects_as_aabb) {
+                //  closest x, y and z point to dot                
                 glm::vec3 closest = glm::vec3(closestVector(m_position.x, {collider->m_position.x, collider->m_size.x, collider->m_third_point.x}), 
                                                 closestVector(m_position.y, {collider->m_position.y, collider->m_size.y, collider->m_third_point.y}), 
                                                 closestVector(m_position.z, {collider->m_position.z, collider->m_size.z, collider->m_third_point.z}));
 
-                glm::vec3 dist = glm::distance(closest, m_position);
-                //if(dist.x)
+                //glm::vec3 dist = glm::distance(closest, m_position);
+
+                // lenghts between 2 points on x, y and z
+                glm::vec3 lenghts[3] = { glm::vec3(abs(collider->m_position.x - collider->m_size.x), abs(collider->m_position.y - collider->m_size.y), abs(collider->m_position.z - collider->m_size.z)),
+                                            glm::vec3(abs(collider->m_size.x - collider->m_third_point.x), abs(collider->m_size.y - collider->m_third_point.y), abs(collider->m_size.z - collider->m_third_point.z)),
+                                            glm::vec3(abs(collider->m_position.x - collider->m_third_point.x), abs(collider->m_position.y - collider->m_third_point.y), abs(collider->m_position.z - collider->m_third_point.z))};
+
+                // Pitagoras of line in every direction
+                glm::vec3 lengths_in_directions = glm::vec3(sqrtf((lenghts[0].y * lenghts[0].y) + (lenghts[0].z * lenghts[0].z)), sqrtf((lenghts[1].x * lenghts[1].x) + (lenghts[1].z * lenghts[1].z)), sqrtf((lenghts[2].y * lenghts[2].y) + (lenghts[2].x * lenghts[2].x)));
+
+                // sin alpha later used to get hypotenuse of triangle
+                glm::vec3 sin_alpha = glm::vec3(lenghts[0].x / lengths_in_directions.x, lenghts[1].y / lengths_in_directions.y, lenghts[2].z / lengths_in_directions.z);
+                
+                // hypotenuse on every dimmension
+                glm::vec3 lenghts_of_c = glm::vec3(abs(m_position.x - closest.x) / sin_alpha.x, abs(m_position.y - closest.y) / sin_alpha.y, abs(m_position.z - closest.z) / sin_alpha.z);
+                
+                // predicted hitpoint
+                glm::vec3 hit_point = glm::vec3(closest.x - lenghts_of_c.x, closest.y - lenghts_of_c.y, closest.z - lenghts_of_c.z);
             }
             else {
                 glm::vec3 closest = glm::vec3(closestVector(collider->m_position.x, {m_position.x, m_size.x, m_third_point.x}), 

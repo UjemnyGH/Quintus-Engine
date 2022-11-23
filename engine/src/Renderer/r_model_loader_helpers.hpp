@@ -2,6 +2,9 @@
 #ifndef __R_MODEL_LOADER_HELPERS_
 #define __R_MODEL_LOADER_HELPERS_
 
+#include <algorithm>
+#include <vector>
+
 namespace qe
 {
     /**

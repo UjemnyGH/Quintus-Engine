@@ -11,9 +11,9 @@ public:
 
 qe::Renderer test1;
 qe::Renderer skybox;
-glm::vec3 playerPos = glm::vec3(0.0f);
-glm::vec3 playerDir = glm::vec3(0.0f, 0.0f, 1.0f);
-glm::vec3 playerVelocity = glm::vec3(0.0f);
+qe::math::Vector<float> playerPos = qe::math::Vector<float>(0.0f);
+qe::math::Vector<float> playerDir = qe::math::Vector<float>(0.0f, 0.0f, 1.0f);
+qe::math::Vector<float> playerVelocity = qe::math::Vector<float>(0.0f);
 float playerVelocityGain = 0.05f;
 float playerVelocityMax = 0.5f;
 int lastX = 400;
@@ -22,6 +22,7 @@ float yaw = 0.0f;
 float pitch = 0.0f;
 bool move_press = false;
 bool strafe_press = false;
+const float playerSpeed = 10.0f;
 
 void mouse(GLFWwindow* window, double xpos, double ypos) {
     if(glfwGetMouseButton(window, GLFW_MOUSE_BUTTON_1) == GLFW_PRESS) {
@@ -33,20 +34,20 @@ void mouse(GLFWwindow* window, double xpos, double ypos) {
 		lastX = xpos;
 		lastY = ypos;
 
-		float sensitivity = 0.02f;
+		float sensitivity = 0.01f;
 		xoffset *= sensitivity;
 		yoffset *= sensitivity;
 
 		yaw += xoffset;
 		pitch += yoffset;
 
-		pitch = qe::math::clamp(pitch, glm::radians(-89.99f), glm::radians(89.99f));
+		pitch = qe::math::clamp(pitch, qe::math::to_radians(-89.99f), qe::math::to_radians(89.99f));
 
         playerDir.x = cos(pitch) * cos(yaw);
         playerDir.y = sin(pitch);
         playerDir.z = sin(yaw) * cos(pitch);
 
-        playerDir = glm::normalize(playerDir);
+        playerDir = playerDir.normalize();
     }
     else {
         glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_NORMAL);
@@ -58,27 +59,44 @@ void Game::input() {
     strafe_press = false;
 
     if(glfwGetKey(Game::getWindowPtr(), GLFW_KEY_W) == GLFW_PRESS) {
+        if(playerVelocity.z < 0.0f) {
+            playerVelocity.z = 0.0f;
+        }
+
         playerVelocity.z += abs(playerVelocity.z) < playerVelocityMax ? playerVelocityGain : 0.0f;
         move_press = true;
     }
     else if(glfwGetKey(Game::getWindowPtr(), GLFW_KEY_S) == GLFW_PRESS) {
+        if(playerVelocity.z > 0.0f) {
+            playerVelocity.z = 0.0f;
+        }
+
         playerVelocity.z -= abs(playerVelocity.z) < playerVelocityMax ? playerVelocityGain : 0.0f;
         move_press = true;
     }
 
     if(glfwGetKey(Game::getWindowPtr(), GLFW_KEY_D) == GLFW_PRESS) {
+        if(playerVelocity.x < 0.0f) {
+            playerVelocity.x = 0.0f;
+        }
+
         playerVelocity.x += abs(playerVelocity.x) < playerVelocityMax ? playerVelocityGain : 0.0f;
         strafe_press = true;
     }
     else if(glfwGetKey(Game::getWindowPtr(), GLFW_KEY_A) == GLFW_PRESS) {
+        if(playerVelocity.x > 0.0f) {
+            playerVelocity.x = 0.0f;
+        }
+
         playerVelocity.x -= abs(playerVelocity.x) < playerVelocityMax ? playerVelocityGain : 0.0f;
         strafe_press = true;
     }
 
-    playerPos.z += playerDir.z * playerVelocity.z;
-    playerPos.x += playerDir.x * playerVelocity.z;
+    playerPos.z += playerDir.z * playerVelocity.z * Game::time.GetDeltaTime() * playerSpeed;
+    playerPos.x += playerDir.x * playerVelocity.z * Game::time.GetDeltaTime() * playerSpeed;
 
-    playerPos += glm::normalize(glm::cross(playerDir, glm::vec3(0.0f, 1.0f, 0.0f))) * playerVelocity.x;
+    playerPos += playerDir.normalize().cross(qe::math::Vector<float>(0.0f, 1.0f, 0.0f)).normalize() * (playerVelocity.x * Game::time.GetDeltaTime() * playerSpeed);
+    //playerPos += qe::math::Vector<float>(glm::cross(glm::vec3(playerPos.x, playerPos.y, playerPos.z), glm::vec3(0.0f, 1.0f, 0.0f)).x, glm::cross(glm::vec3(playerPos.x, playerPos.y, playerPos.z), glm::vec3(0.0f, 1.0f, 0.0f)).y, glm::cross(glm::vec3(playerPos.x, playerPos.y, playerPos.z), glm::vec3(0.0f, 1.0f, 0.0f)).z).normalize() * playerVelocity.x;
 
     if(!move_press) {
         playerVelocity.z -= playerVelocity.z > 0.0f ? playerVelocityGain : 0.0f;
@@ -153,7 +171,7 @@ void Game::Update() {
         std::cerr << "Reloaded shaders\n";
     }
 
-    qe::g_view = glm::lookAt(playerPos, playerPos + playerDir, glm::vec3(0.0f, 1.0f, 0.0f));
+    qe::g_view = glm::lookAt(glm::vec3(playerPos.x, playerPos.y, playerPos.z), glm::vec3(playerPos.x, playerPos.y, playerPos.z) + glm::vec3(playerDir.x, playerDir.y, playerDir.z), glm::vec3(0.0f, 1.0f, 0.0f));
 
     //test1.SetRotationByID(0, Game::time.GetTime() * 1.0f, Game::time.GetTime() * 1.0f, Game::time.GetTime() * 1.0f);
 

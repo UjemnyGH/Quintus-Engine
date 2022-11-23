@@ -2,7 +2,6 @@
 #ifndef __R_RENDERER_HELPERS_
 #define __R_RENDERER_HELPERS_
 
-#include <glm/glm.hpp>
 #include <vector>
 #include <algorithm>
 #include "../Core/c_algorithms.hpp"

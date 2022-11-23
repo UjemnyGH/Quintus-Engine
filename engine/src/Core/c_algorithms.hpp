@@ -4,8 +4,16 @@
 
 #include <iostream>
 #include <vector>
+#include <glm/glm.hpp>
 
 namespace qe {
+    /**
+     * @brief It swaps 2 values
+     * 
+     * @tparam T 
+     * @param a 
+     * @param b 
+     */
     template<class T>
     void swapValues(T* a, T* b) {
         T t = *a;
@@ -261,6 +269,277 @@ namespace qe {
          */
         glm::vec3 cross(glm::vec3 a, glm::vec3 b) {
             return glm::vec3((a.y * b.z) - (a.z * b.y), (a.x * b.z) - (a.z * b.x), (a.y * b.x) - (a.x * b.y));
+        }
+
+        /**
+         * @brief original fast inverse sqrt from Quake III Arena slightly modified
+         * 
+         * @param number 
+         * @return float 
+         */
+        template<typename T>
+        T Q_invsqrt( T number )
+        {
+            long i;
+            T x2, y;
+            const T threehalfs = static_cast<T>(1.5);
+
+            x2 = number * static_cast<T>(0.5);
+            y  = number;
+            i  = * ( long * ) &y;                       // evil floating point bit level hacking
+            i  = 0x5f3759df - ( i >> 1 );               // what the fuck?
+            y  = * ( float * ) &i;
+            y  = y * ( threehalfs - ( x2 * y * y ) );   // 1st iteration
+            // y  = y * ( threehalfs - ( x2 * y * y ) );   // 2nd iteration, this can be removed
+
+            return y;
+        }
+
+        /**
+         * @brief Absolute value
+         * 
+         * @tparam T 
+         * @param x 
+         * @return T 
+         */
+        template<typename T>
+        T absolute(T x) {
+            return x >= static_cast<T>(0) ? x : -x;
+        }
+
+        // TODO: Dynamic Matrix Struct
+
+        template<typename T>
+        struct Vector {
+            union { T x, r, s; };
+            union { T y, g, t; };
+            union { T z, b, p; };
+            union { T w, a, q; };
+
+            constexpr Vector<T>() { x = y = z = w = static_cast<T>(0); }
+            constexpr Vector<T>(T _x, T _y, T _z = 0.0f, T _w = 0.0f) { x = _x; y = _y; z = _z; w = _w; }
+            constexpr Vector<T>(T val) { x = y = z = w = val; }
+            constexpr Vector<T>(Vector<T> const &vec) { x = vec.x; y = vec.y; z = vec.z; w = vec.w; }
+
+            constexpr Vector<T> operator=(Vector<T> const &vec) { this->x = vec.x; this->y = vec.y; this->z = vec.z; this->w = vec.w; return *this; }
+
+            constexpr Vector<T> operator+(Vector<T> const &vec) { return Vector<T>(this->x + vec.x, this->y + vec.y, this->z + vec.z, this->w + vec.w); }
+            constexpr Vector<T> operator-(Vector<T> const &vec) { return Vector<T>(this->x - vec.x, this->y - vec.y, this->z - vec.z, this->w - vec.w); }
+            constexpr Vector<T> operator*(Vector<T> const &vec) { return Vector<T>(this->x * vec.x, this->y * vec.y, this->z * vec.z, this->w * vec.w); }
+            constexpr Vector<T> operator/(Vector<T> const &vec) { return Vector<T>(this->x / vec.x, this->y / vec.y, this->z / vec.z, this->w / vec.w); }
+
+            constexpr Vector<T> operator+(T scalar) { return Vector<T>(this->x + scalar, this->y + scalar, this->z + scalar, this->w + scalar); }
+            constexpr Vector<T> operator-(T scalar) { return Vector<T>(this->x - scalar, this->y - scalar, this->z - scalar, this->w - scalar); }
+            constexpr Vector<T> operator*(T scalar) { return Vector<T>(this->x * scalar, this->y * scalar, this->z * scalar, this->w * scalar); }
+            constexpr Vector<T> operator/(T scalar) { return Vector<T>(this->x / scalar, this->y / scalar, this->z / scalar, this->w / scalar); }
+
+            constexpr Vector<T> operator+=(Vector<T> const &vec) { *this = *this + vec; return *this; }
+            constexpr Vector<T> operator-=(Vector<T> const &vec) { *this = *this - vec; return *this; }
+            constexpr Vector<T> operator*=(Vector<T> const &vec) { *this = *this * vec; return *this; }
+            constexpr Vector<T> operator/=(Vector<T> const &vec) { *this = *this / vec; return *this; }
+
+            constexpr Vector<T> operator+=(T scalar) { *this = *this + Vector<T>(scalar); return *this; }
+            constexpr Vector<T> operator-=(T scalar) { *this = *this - Vector<T>(scalar); return *this; }
+            constexpr Vector<T> operator*=(T scalar) { *this = *this * Vector<T>(scalar); return *this; }
+            constexpr Vector<T> operator/=(T scalar) { *this = *this / Vector<T>(scalar); return *this; }
+
+            constexpr Vector<T> operator++() { return Vector<T>(this->x + static_cast<T>(1), this->y + static_cast<T>(1), this->z + static_cast<T>(1), this->w + static_cast<T>(1)); }
+            constexpr Vector<T> operator--() { return Vector<T>(this->x - static_cast<T>(1), this->y - static_cast<T>(1), this->z - static_cast<T>(1), this->w - static_cast<T>(1)); }
+
+            constexpr Vector<T> operator%(Vector<T> const &vec) { return Vector<T>(this->x % vec.x, this->y % vec.y, this->z % vec.z, this->w % vec.w); }
+            constexpr Vector<T> operator&(Vector<T> const &vec) { return Vector<T>(this->x & vec.x, this->y & vec.y, this->z & vec.z, this->w & vec.w); }
+            constexpr Vector<T> operator|(Vector<T> const &vec) { return Vector<T>(this->x | vec.x, this->y | vec.y, this->z | vec.z, this->w | vec.w); }
+            constexpr Vector<T> operator^(Vector<T> const &vec) { return Vector<T>(this->x ^ vec.x, this->y ^ vec.y, this->z ^ vec.z, this->w ^ vec.w); }
+            constexpr Vector<T> operator<<(Vector<T> const &vec) { return Vector<T>(this->x << vec.x, this->y << vec.y, this->z << vec.z, this->w << vec.w); }
+            constexpr Vector<T> operator>>(Vector<T> const &vec) { return Vector<T>(this->x >> vec.x, this->y >> vec.y, this->z >> vec.z, this->w >> vec.w); }
+
+            constexpr Vector<T> operator%(T scalar) { return Vector<T>(this->x % scalar, this->y % scalar, this->z % scalar, this->w % scalar); }
+            constexpr Vector<T> operator&(T scalar) { return Vector<T>(this->x & scalar, this->y & scalar, this->z & scalar, this->w & scalar); }
+            constexpr Vector<T> operator|(T scalar) { return Vector<T>(this->x | scalar, this->y | scalar, this->z | scalar, this->w | scalar); }
+            constexpr Vector<T> operator^(T scalar) { return Vector<T>(this->x ^ scalar, this->y ^ scalar, this->z ^ scalar, this->w ^ scalar); }
+            constexpr Vector<T> operator<<(T scalar) { return Vector<T>(this->x << scalar, this->y << scalar, this->z << scalar, this->w << scalar); }
+            constexpr Vector<T> operator>>(T scalar) { return Vector<T>(this->x >> scalar, this->y >> scalar, this->z >> scalar, this->w >> scalar); }
+
+
+            constexpr Vector<T> operator%=(Vector<T> const &vec) { *this = *this % vec; return *this;}
+            constexpr Vector<T> operator&=(Vector<T> const &vec) { *this = *this & vec; return *this;}
+            constexpr Vector<T> operator|=(Vector<T> const &vec) { *this = *this | vec; return *this;}
+            constexpr Vector<T> operator^=(Vector<T> const &vec) { *this = *this ^ vec; return *this;}
+            constexpr Vector<T> operator<<=(Vector<T> const &vec) { *this = *this << vec; return *this;}
+            constexpr Vector<T> operator>>=(Vector<T> const &vec) { *this = *this >> vec; return *this;}
+
+            constexpr Vector<T> operator%=(T scalar) { *this = *this % scalar; return *this;}
+            constexpr Vector<T> operator&=(T scalar) { *this = *this & scalar; return *this;}
+            constexpr Vector<T> operator|=(T scalar) { *this = *this | scalar; return *this;}
+            constexpr Vector<T> operator^=(T scalar) { *this = *this ^ scalar; return *this;}
+            constexpr Vector<T> operator<<=(T scalar) { *this = *this << scalar; return *this;}
+            constexpr Vector<T> operator>>=(T scalar) { *this = *this >> scalar; return *this;}
+
+            constexpr bool operator==(Vector<T> const &vec) { return (this->x == vec.x) && (this->y == vec.y) && (this->z == vec.z) && (this->w == vec.w); }
+            constexpr bool operator!=(Vector<T> const &vec) { return (this->x != vec.x) && (this->y != vec.y) && (this->z != vec.z) && (this->w != vec.w); }
+            constexpr bool operator>(Vector<T> const &vec) { return (this->x > vec.x) && (this->y > vec.y) && (this->z > vec.z) && (this->w > vec.w); }
+            constexpr bool operator<(Vector<T> const &vec) { return (this->x < vec.x) && (this->y < vec.y) && (this->z < vec.z) && (this->w < vec.w); }
+            constexpr bool operator>=(Vector<T> const &vec) { return (this->x >= vec.x) && (this->y >= vec.y) && (this->z >= vec.z) && (this->w >= vec.w); }
+            constexpr bool operator<=(Vector<T> const &vec) { return (this->x <= vec.x) && (this->y <= vec.y) && (this->z <= vec.z) && (this->w <= vec.w); }
+
+            /**
+             * @brief Cross function
+             * 
+             * @param vec 
+             * @return constexpr Vector<T> 
+             */
+            constexpr Vector<T> cross(Vector<T> const &vec) { return Vector<T>(this->y * vec.z - this->z * vec.y, this->x * vec.z - this->z * vec.x, this->x * vec.y - this->y * vec.x); }
+            
+            /**
+             * @brief Static cross function
+             * 
+             * @param vec 
+             * @param vec2 
+             * @return constexpr Vector<T> 
+             */
+            constexpr static Vector<T> cross(Vector<T> const &vec, Vector<T> const &vec2) { return Vector<T>(vec.y * vec2.z - vec.z * vec2.y, vec.x * vec2.z - vec.z * vec2.x, vec.x * vec2.y - vec.y * vec2.x); }
+            
+            /**
+             * @brief Dot function
+             * 
+             * @param vec 
+             * @return constexpr T 
+             */
+            constexpr T dot(Vector<T> const &vec) { return this->x * vec.x + this->y * vec.y + this->z * vec.z + this->w * vec.w; }
+
+            /**
+             * @brief Static dot function
+             * 
+             * @param vec 
+             * @param vec2 
+             * @return constexpr T 
+             */
+            constexpr static T dot(Vector<T> const &vec, Vector<T> const &vec2) { return vec2.x * vec.x + vec2.y * vec.y + vec2.z * vec.z + vec2.w * vec.w; }
+            
+            /**
+             * @brief Length function
+             * 
+             * @return constexpr T 
+             */
+            constexpr T length() { return sqrt(this->dot(*this)); }
+
+            /**
+             * @brief Static length function
+             * 
+             * @param vec 
+             * @return constexpr T 
+             */
+            constexpr static T length(Vector<T> const &vec) { return sqrt(Vector<T>::dot(vec, vec)); }
+
+            /**
+             * @brief Normalize function
+             * 
+             * @return constexpr Vector<T> 
+             */
+            constexpr Vector<T> normalize() { return *this * (static_cast<T>(1) / sqrt(this->dot(*this))); }
+
+            /**
+             * @brief Static normalize function
+             * 
+             * @param vec 
+             * @return constexpr Vector<T> 
+             */
+            constexpr static Vector<T> normalize(Vector<T> const &vec) { return vec * (static_cast<T>(1) / sqrt(Vector<T>::dot(vec, vec))); }
+
+            /**
+             * @brief Distance function
+             * 
+             * @param vec 
+             * @return constexpr T 
+             */
+            constexpr T distance(Vector<T> const &vec) { return Vector<T>::length(*this - vec); } 
+
+            /**
+             * @brief Static distance function
+             * 
+             * @param vec 
+             * @param vec2 
+             * @return constexpr T 
+             */
+            constexpr static T distance(Vector<T> const &vec, Vector<T> const &vec2) { return Vector<T>::length(vec2 - vec); } 
+
+            /**
+             * @brief Inverts vector
+             * 
+             * @return constexpr Vector<T> 
+             */
+            constexpr Vector<T> invert() { return Vector<T>(-this->x, -this->y, -this->z, -this->w); }
+
+            /**
+             * @brief Static vector invert
+             * 
+             * @param vec 
+             * @return constexpr Vector<T> 
+             */
+            constexpr static Vector<T> invert(Vector<T> const &vec) { return Vector<T>(-vec.x, -vec.y, -vec.z, -vec.w); }
+
+            /**
+             * @brief Absolute value of vector
+             * 
+             * @return constexpr Vector<T> 
+             */
+            constexpr Vector<T> abs() { return Vector<T>(qe::math::absolute(this->x), qe::math::absolute(this->y), qe::math::absolute(this->z), qe::math::absolute(this->w)); }
+
+            /**
+             * @brief Static absolute value of vector
+             * 
+             * @param vec 
+             * @return constexpr Vector<T> 
+             */
+            constexpr static Vector<T> abs(Vector<T> const &vec) { return Vector<T>(qe::math::absolute(vec.x), qe::math::absolute(vec.y), qe::math::absolute(vec.z), qe::math::absolute(vec.w)); }
+        };
+
+        /**
+         * @brief Convert deegrees to radians
+         * 
+         * @tparam T 
+         * @param degrees 
+         * @return T 
+         */
+        template<typename T>
+        T to_radians(T degrees) {
+            return degrees * static_cast<T>(M_PI / 180.0);
+        }
+
+        /**
+         * @brief Convert radians to deegrees
+         * 
+         * @tparam T 
+         * @param degrees 
+         * @return T 
+         */
+        template<typename T>
+        T to_degrees(T radians) {
+            return radians * static_cast<T>(180.0 / M_PI);
+        }
+
+        /**
+         * @brief My own implementation of sin
+         * 
+         * @tparam T 
+         * @param x 
+         * @return T 
+         */
+        template<typename T>
+        T sin(T x) {
+            return (x / static_cast<T>(M_PI)) * static_cast<T>(3);
+        }
+
+        /**
+         * @brief My own implementation of cos
+         * 
+         * @tparam T 
+         * @param x 
+         * @return T 
+         */
+        template<typename T>
+        T cos(T x) {
+            return sqrt(1 - (qe::math::sin(x) * qe::math::sin(x)));
         }
     }
 }

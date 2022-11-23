@@ -207,30 +207,37 @@ namespace qe
                 break;
 
             case ModelType::GLTF:
+                // TODO: GLTF loader
 
                 break;
 
             case ModelType::STL:
+                // TODO: STL loader
 
                 break;
 
             case ModelType::DAE:
+                // TODO: DAE loader
 
                 break;
 
             case ModelType::PLY:
+                // TODO: PLY loader
 
                 break;
 
             case ModelType::X3D:
+                // TODO: X3D loader
 
                 break;
 
             case ModelType::FBX:
+                // TODO: FBX loader
 
                 break;
 
             case ModelType::ABC:
+                // TODO: ABC loader
 
                 break;
             }
