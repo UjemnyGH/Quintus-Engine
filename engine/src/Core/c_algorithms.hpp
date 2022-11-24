@@ -492,6 +492,78 @@ namespace qe {
              * @return constexpr Vector<T> 
              */
             constexpr static Vector<T> abs(Vector<T> const &vec) { return Vector<T>(qe::math::absolute(vec.x), qe::math::absolute(vec.y), qe::math::absolute(vec.z), qe::math::absolute(vec.w)); }
+
+            /**
+             * @brief Get closest vector to heap of vectors
+             * 
+             * @param vecs 
+             * @return constexpr Vector<T> 
+             */
+            constexpr Vector<T> closest(std::vector<Vector<T>> const &vecs) { 
+                Vector<T> result = vecs[0];
+                
+                for(Vector<T> vec : vecs) {
+                    if(Vector<T>::abs(*this - vec) < Vector<T>::abs(*this - result)) {
+                        result = vec;
+                    }
+                }
+
+                return result;
+            }
+
+            /**
+             * @brief Static get closest vector to heap of vectors
+             * 
+             * @param vecs 
+             * @return constexpr Vector<T> 
+             */
+            constexpr static Vector<T> closest(Vector<T> const &vec_val, std::vector<Vector<T>> const &vecs) { 
+                Vector<T> result = vecs[0];
+                
+                for(Vector<T> vec : vecs) {
+                    if(Vector<T>::abs(vec_val - vec) < Vector<T>::abs(vec_val - result)) {
+                        result = vec;
+                    }
+                }
+
+                return result;
+            }
+
+            /**
+             * @brief Return highest y vector
+             * 
+             * @param vecs 
+             * @return constexpr Vector<T> 
+             */
+            constexpr Vector<T> highest_on_y(std::vector<Vector<T>> const &vecs) {
+                Vector<T> result = vecs[0];
+
+                for(Vector<T> v : vecs) {
+                    if(v.y > result.y) {
+                        result = v;
+                    }
+                }
+
+                return result;
+            }
+
+            /**
+             * @brief Return highest y vector
+             * 
+             * @param vecs 
+             * @return constexpr Vector<T> 
+             */
+            constexpr static Vector<T> highest_on_y(std::vector<Vector<T>> const &vecs, bool st) {
+                Vector<T> result = vecs[0];
+
+                for(Vector<T> v : vecs) {
+                    if(v.y > result.y) {
+                        result = v;
+                    }
+                }
+
+                return result;
+            }
         };
 
         /**
