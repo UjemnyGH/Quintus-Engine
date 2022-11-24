@@ -461,7 +461,7 @@ namespace qe {
              * @param vec2 
              * @return constexpr T 
              */
-            constexpr static T distance(Vector<T> const &vec, Vector<T> const &vec2) { return Vector<T>::length(vec2 - vec); } 
+            constexpr static T distance(Vector<T> &vec, Vector<T> &vec2) { return Vector<T>::length(vec2 - vec); } 
 
             /**
              * @brief Inverts vector
@@ -564,6 +564,186 @@ namespace qe {
 
                 return result;
             }
+
+            /**
+             * @brief Return lowest y vector
+             * 
+             * @param vecs 
+             * @return constexpr Vector<T> 
+             */
+            constexpr Vector<T> lowest_on_y(std::vector<Vector<T>> const &vecs) {
+                Vector<T> result = vecs[0];
+
+                for(Vector<T> v : vecs) {
+                    if(v.y < result.y) {
+                        result = v;
+                    }
+                }
+
+                return result;
+            }
+
+            /**
+             * @brief Return lowest y vector
+             * 
+             * @param vecs 
+             * @return constexpr Vector<T> 
+             */
+            constexpr static Vector<T> lowest_on_y(std::vector<Vector<T>> const &vecs, bool st) {
+                Vector<T> result = vecs[0];
+
+                for(Vector<T> v : vecs) {
+                    if(v.y < result.y) {
+                        result = v;
+                    }
+                }
+
+                return result;
+            }
+
+            /**
+             * @brief Return highest x vector
+             * 
+             * @param vecs 
+             * @return constexpr Vector<T> 
+             */
+            constexpr Vector<T> highest_on_x(std::vector<Vector<T>> const &vecs) {
+                Vector<T> result = vecs[0];
+
+                for(Vector<T> v : vecs) {
+                    if(v.x > result.x) {
+                        result = v;
+                    }
+                }
+
+                return result;
+            }
+
+            /**
+             * @brief Return highest x vector
+             * 
+             * @param vecs 
+             * @return constexpr Vector<T> 
+             */
+            constexpr static Vector<T> highest_on_x(std::vector<Vector<T>> const &vecs, bool st) {
+                Vector<T> result = vecs[0];
+
+                for(Vector<T> v : vecs) {
+                    if(v.x > result.x) {
+                        result = v;
+                    }
+                }
+
+                return result;
+            }
+
+            /**
+             * @brief Return lowest x vector
+             * 
+             * @param vecs 
+             * @return constexpr Vector<T> 
+             */
+            constexpr Vector<T> lowest_on_x(std::vector<Vector<T>> const &vecs) {
+                Vector<T> result = vecs[0];
+
+                for(Vector<T> v : vecs) {
+                    if(v.x < result.x) {
+                        result = v;
+                    }
+                }
+
+                return result;
+            }
+
+            /**
+             * @brief Return lowest x vector
+             * 
+             * @param vecs 
+             * @return constexpr Vector<T> 
+             */
+            constexpr static Vector<T> lowest_on_x(std::vector<Vector<T>> const &vecs, bool st) {
+                Vector<T> result = vecs[0];
+
+                for(Vector<T> v : vecs) {
+                    if(v.x < result.x) {
+                        result = v;
+                    }
+                }
+
+                return result;
+            }
+
+            /**
+             * @brief Return highest z vector
+             * 
+             * @param vecs 
+             * @return constexpr Vector<T> 
+             */
+            constexpr Vector<T> highest_on_z(std::vector<Vector<T>> const &vecs) {
+                Vector<T> result = vecs[0];
+
+                for(Vector<T> v : vecs) {
+                    if(v.z > result.z) {
+                        result = v;
+                    }
+                }
+
+                return result;
+            }
+
+            /**
+             * @brief Return highest z vector
+             * 
+             * @param vecs 
+             * @return constexpr Vector<T> 
+             */
+            constexpr static Vector<T> highest_on_z(std::vector<Vector<T>> const &vecs, bool st) {
+                Vector<T> result = vecs[0];
+
+                for(Vector<T> v : vecs) {
+                    if(v.z > result.z) {
+                        result = v;
+                    }
+                }
+
+                return result;
+            }
+
+            /**
+             * @brief Return lowest z vector
+             * 
+             * @param vecs 
+             * @return constexpr Vector<T> 
+             */
+            constexpr Vector<T> lowest_on_z(std::vector<Vector<T>> const &vecs) {
+                Vector<T> result = vecs[0];
+
+                for(Vector<T> v : vecs) {
+                    if(v.z < result.z) {
+                        result = v;
+                    }
+                }
+
+                return result;
+            }
+
+            /**
+             * @brief Return lowest z vector
+             * 
+             * @param vecs 
+             * @return constexpr Vector<T> 
+             */
+            constexpr static Vector<T> lowest_on_z(std::vector<Vector<T>> const &vecs, bool st) {
+                Vector<T> result = vecs[0];
+
+                for(Vector<T> v : vecs) {
+                    if(v.z < result.z) {
+                        result = v;
+                    }
+                }
+
+                return result;
+            }
         };
 
         /**
@@ -588,30 +768,6 @@ namespace qe {
         template<typename T>
         T to_degrees(T radians) {
             return radians * static_cast<T>(180.0 / M_PI);
-        }
-
-        /**
-         * @brief My own implementation of sin
-         * 
-         * @tparam T 
-         * @param x 
-         * @return T 
-         */
-        template<typename T>
-        T sin(T x) {
-            return (x / static_cast<T>(M_PI)) * static_cast<T>(3);
-        }
-
-        /**
-         * @brief My own implementation of cos
-         * 
-         * @tparam T 
-         * @param x 
-         * @return T 
-         */
-        template<typename T>
-        T cos(T x) {
-            return sqrt(1 - (qe::math::sin(x) * qe::math::sin(x)));
         }
     }
 }

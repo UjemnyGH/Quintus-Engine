@@ -7,7 +7,7 @@
 namespace qe {
     float g_gravity = 10.0f;
 
-    class QE_Rigidbody {
+    class Rigidbody {
     private:
         
 
@@ -25,26 +25,10 @@ namespace qe {
         float m_acceleration = 0.0f;
         bool m_use_gravity = true;
 
-        QE_Rigidbody() {}
+        Rigidbody() {}
 
         void AddForce(float force) {
             m_velocity += force;
-        }
-
-        void BasicCalculations(float delta_time) {
-            m_acceleration = m_velocity / delta_time;
-            m_force = m_acceleration * m_mass;
-            m_friction = m_friction_coefficient * m_force;
-
-            m_velocity -= m_friction;
-            m_position.y -= m_down_force;
-
-            if(m_use_gravity) {
-                m_down_force = g_gravity * m_mass;
-            }
-            else {
-                m_down_force = 0.0f;
-            }
         }
     };
 }

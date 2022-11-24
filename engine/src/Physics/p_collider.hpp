@@ -58,6 +58,8 @@ namespace qe {
             bool collY = false;//(m_size.y > collider->m_size.y && m_size.y < collider->m_position.y) || (m_position.y > collider->m_size.y && m_position.y < collider->m_position.y) || (m_size.y > collider->m_position.y && m_size.y < collider->m_size.y) || (m_position.y > collider->m_position.y && m_position.y < collider->m_size.y);
             bool collZ = false;//(m_size.z > collider->m_size.z && m_size.z < collider->m_position.z) || (m_position.z > collider->m_size.z && m_position.z < collider->m_position.z) || (m_size.z > collider->m_position.z && m_size.z < collider->m_size.z) || (m_position.z > collider->m_position.z && m_position.z < collider->m_size.z);
 
+
+
             return collX && collY && collZ;
         }
 
@@ -65,9 +67,22 @@ namespace qe {
             return false;   
         }
 
+        /**
+         * @brief Point to line 2D collisions
+         * 
+         * @param collider 
+         * @param error_margin 
+         * @param this_object_as_point 
+         * @return true 
+         * @return false 
+         */
         bool CheckPointToLine2D(Collider* collider, float error_margin = 0.1f, bool this_object_as_point = true) {
             if(this_object_as_point) {
                 math::Vector<float> highest = math::Vector<float>::highest_on_y({collider->m_position, collider->m_size}, true);
+                math::Vector<float> lowest = math::Vector<float>::lowest_on_y({collider->m_position,collider-> m_size}, true);
+
+                math::Vector<float> high_x = math::Vector<float>::highest_on_x({collider->m_position, collider->m_size}, true);
+                math::Vector<float> low_x = math::Vector<float>::lowest_on_x({collider->m_position, collider->m_size}, true);
 
                 float length = collider->m_position.distance(collider->m_size);
 
@@ -77,12 +92,16 @@ namespace qe {
 
                 math::Vector<float> hit_point = math::Vector<float>(m_position.x, highest.y - sqrt(pow(highest_point_length / alpha, 2) - pow(highest_point_length, 2)));
             
-                if(m_position > hit_point - error_margin && m_position < hit_point + error_margin) {
+                if(m_position > hit_point - error_margin && m_position < hit_point + error_margin && m_position.y <= highest.y && m_position.y >= lowest.y && hit_point.x >= low_x.x && hit_point.x <= high_x.x) {
                     return true;
                 }
             }
             else {
                 math::Vector<float> highest = math::Vector<float>::highest_on_y({m_position, m_size}, true);
+                math::Vector<float> lowest = math::Vector<float>::lowest_on_y({m_position, m_size}, true);
+
+                math::Vector<float> high_x = math::Vector<float>::highest_on_x({m_position, m_size}, true);
+                math::Vector<float> low_x = math::Vector<float>::lowest_on_x({m_position, m_size}, true);
 
                 float length = m_position.distance(m_size);
 
@@ -92,7 +111,7 @@ namespace qe {
 
                 math::Vector<float> hit_point = math::Vector<float>(collider->m_position.x, highest.y - sqrt(pow(highest_point_length / alpha, 2) - pow(highest_point_length, 2)));
             
-                if(collider->m_position > hit_point - error_margin && collider->m_position < hit_point + error_margin) {
+                if(collider->m_position > hit_point - error_margin && collider->m_position < hit_point + error_margin && collider->m_position.y <= highest.y && collider->m_position.y >= lowest.y && hit_point.x >= low_x.x && hit_point.x <= high_x.x) {
                     return true;
                 }
             }
@@ -100,52 +119,71 @@ namespace qe {
             return false;
         }
 
-        // TODO: Point to plane collisions
-        /*bool CheckPointToPlane(Collider* collider, float error_margin = 0.1f, bool this_objects_as_point = true) {
-            bool collX, collY, collZ;
+        bool CheckPointToPlane(Collider* collider, float error_margin = 0.1f, bool this_object_as_point = true, math::Vector<float> direction = math::Vector<float>(0.0f, -1.0f, 0.0f)) {
+            if(this_object_as_point) {
+                
+            }
+            else {
+
+            }
+
+            return false;
+        }
+
+        /**
+         * @brief Point to line 2D collisions
+         * 
+         * @param collider 
+         * @param error_margin 
+         * @param this_object_as_point 
+         * @return true 
+         * @return false 
+         */
+        /*bool CheckPointToPlane(Collider* collider, float error_margin = 0.1f, bool this_object_as_point = true) {
+            if(this_object_as_point) {
+                math::Vector<float> highest = math::Vector<float>::highest_on_y({collider->m_position, collider->m_size, collider->m_third_point}, true);
+                math::Vector<float> lowest = math::Vector<float>::lowest_on_y({collider->m_position,collider-> m_size, collider->m_third_point}, true);
+
+                math::Vector<float> high_x = math::Vector<float>::highest_on_x({collider->m_position, collider->m_size, collider->m_third_point}, true);
+                math::Vector<float> low_x = math::Vector<float>::lowest_on_x({collider->m_position, collider->m_size, collider->m_third_point}, true);
+
+                float lengths[3] = {collider->m_position.distance(collider->m_size), collider->m_size.distance(collider->m_third_point), collider->m_position.distance(collider->m_third_point)};
+
+                float alphas[3] = {abs(collider->m_position.x - collider->m_size.x) / abs(lengths[0]), abs(collider->m_size.x - collider->m_third_point.x) / abs(lengths[1]), abs(collider->m_position.x - collider->m_third_point.x) / abs(lengths[2])};
+
+                float highest_point_length_x = abs(highest.x - m_position.x);
+                float highest_point_length_z = abs(highest.z - m_position.z);
+
+                math::Vector<float> hit_point = math::Vector<float>(m_position.x, highest.y - sqrt(pow(highest_point_length_x / alphas[0], 2) - pow(highest_point_length_x, 2)), m_position.z);
             
-            if(this_objects_as_point) {
-                //  closest x, y and z point to dot                
-                math::Vector<float> closest = collider->m_position
-
-                math::Vector<float> lenghts[3] = { math::Vector<float>::abs(collider->m_position - collider->m_size),
-                                            math::Vector<float>::abs(collider->m_size - collider->m_third_point),
-                                            math::Vector<float>::abs(collider->m_position - collider->m_third_point)};
-
-                if(m_position + math::Vector<float>(error_margin) >= hit_point && hit_point + math::Vector<float>(error_margin) >= m_position) {
+                if(m_position > hit_point - error_margin && m_position < hit_point + error_margin && m_position.y <= highest.y && m_position.y >= lowest.y && hit_point.x >= low_x.x && hit_point.x <= high_x.x) {
                     return true;
                 }
             }
             else {
-                //  closest x, y and z point to dot                
-                math::Vector<float> closest = m_position;
+                math::Vector<float> highest = math::Vector<float>::highest_on_y({m_position, m_size}, true);
+                math::Vector<float> lowest = math::Vector<float>::lowest_on_y({m_position, m_size}, true);
 
-                //glm::vec3 dist = glm::distance(closest, m_position);
+                math::Vector<float> high_x = math::Vector<float>::highest_on_x({m_position, m_size}, true);
+                math::Vector<float> low_x = math::Vector<float>::lowest_on_x({m_position, m_size}, true);
 
-                // lenghts between 2 points on x, y and z
-                math::Vector<float> lenghts[3] = { math::Vector<float>::abs(m_position - m_size),
-                                            math::Vector<float>::abs(m_size - m_third_point),
-                                            math::Vector<float>::abs(m_position - m_third_point)};
+                float length = m_position.distance(m_size);
 
-                // Pitagoras of line in every direction
-                math::Vector<float> lengths_in_directions = math::Vector<float>(sqrtf((lenghts[0].y * lenghts[0].y) + (lenghts[0].z * lenghts[0].z)), sqrtf((lenghts[1].x * lenghts[1].x) + (lenghts[1].z * lenghts[1].z)), sqrtf((lenghts[2].y * lenghts[2].y) + (lenghts[2].x * lenghts[2].x)));
+                float alpha = abs(m_position.x - m_size.x) / abs(length);
 
-                // sin alpha later used to get hypotenuse of triangle
-                math::Vector<float> sin_alpha = math::Vector<float>(lenghts[0].x / lengths_in_directions.x, lenghts[1].y / lengths_in_directions.y, lenghts[2].z / lengths_in_directions.z);
-                
-                // hypotenuse on every dimmension
-                math::Vector<float> lenghts_of_c = math::Vector<float>::abs(collider->m_position - closest) / sin_alpha;
-                
-                // predicted hitpoint
-                math::Vector<float> hit_point = closest - lenghts_of_c;
+                float highest_point_length = abs(highest.x - collider->m_position.x);
 
-                if(collider->m_position + math::Vector<float>(error_margin) >= hit_point && hit_point + math::Vector<float>(error_margin) >= collider->m_position) {
+                math::Vector<float> hit_point = math::Vector<float>(collider->m_position.x, highest.y - sqrt(pow(highest_point_length / alpha, 2) - pow(highest_point_length, 2)));
+            
+                if(collider->m_position > hit_point - error_margin && collider->m_position < hit_point + error_margin && collider->m_position.y <= highest.y && collider->m_position.y >= lowest.y && hit_point.x >= low_x.x && hit_point.x <= high_x.x) {
                     return true;
                 }
             }
 
             return false;
         }*/
+
+        // TODO: Point to plane collisions
     };
 }
 
