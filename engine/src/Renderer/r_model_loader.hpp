@@ -118,6 +118,8 @@ namespace qe
                             data[current_pusher - 1].m_vertices.push_back(helper.m_vertices[(iv[i] - 1) * 3 + 1]);
                             data[current_pusher - 1].m_vertices.push_back(helper.m_vertices[(iv[i] - 1) * 3 + 2]);
 
+                            m_vertices_amount_loaded++;
+
                             data[current_pusher - 1].m_normals.push_back(helper.m_normals[(in[i] - 1) * 3]);
                             data[current_pusher - 1].m_normals.push_back(helper.m_normals[(in[i] - 1) * 3 + 1]);
                             data[current_pusher - 1].m_normals.push_back(helper.m_normals[(in[i] - 1) * 3 + 2]);
@@ -127,6 +129,8 @@ namespace qe
                             data[current_pusher - 1].m_vertices.push_back(helper.m_vertices[(iv[i - (i == 1 ? 1 : 0)] - 1) * 3]);
                             data[current_pusher - 1].m_vertices.push_back(helper.m_vertices[(iv[i - (i == 1 ? 1 : 0)] - 1) * 3 + 1]);
                             data[current_pusher - 1].m_vertices.push_back(helper.m_vertices[(iv[i - (i == 1 ? 1 : 0)] - 1) * 3 + 2]);
+
+                            m_vertices_amount_loaded++;
 
                             data[current_pusher - 1].m_normals.push_back(helper.m_normals[(in[i - (i == 1 ? 1 : 0)] - 1) * 3]);
                             data[current_pusher - 1].m_normals.push_back(helper.m_normals[(in[i - (i == 1 ? 1 : 0)] - 1) * 3 + 1]);
@@ -142,6 +146,8 @@ namespace qe
                             data[current_pusher - 1].m_vertices.push_back(helper.m_vertices[(iv[i] - 1) * 3 + 1]);
                             data[current_pusher - 1].m_vertices.push_back(helper.m_vertices[(iv[i] - 1) * 3 + 2]);
 
+                            m_vertices_amount_loaded++;
+
                             data[current_pusher - 1].m_texture_coordinates.push_back(helper.m_texture_coordinates[(it[i] - 1) * 2]);
                             data[current_pusher - 1].m_texture_coordinates.push_back(helper.m_texture_coordinates[(it[i] - 1) * 2 + 1]);
 
@@ -154,6 +160,8 @@ namespace qe
                             data[current_pusher - 1].m_vertices.push_back(helper.m_vertices[(iv[i - (i == 1 ? 1 : 0)] - 1) * 3]);
                             data[current_pusher - 1].m_vertices.push_back(helper.m_vertices[(iv[i - (i == 1 ? 1 : 0)] - 1) * 3 + 1]);
                             data[current_pusher - 1].m_vertices.push_back(helper.m_vertices[(iv[i - (i == 1 ? 1 : 0)] - 1) * 3 + 2]);
+
+                            m_vertices_amount_loaded++;
 
                             data[current_pusher - 1].m_texture_coordinates.push_back(helper.m_texture_coordinates[(it[i - (i == 1 ? 1 : 0)] - 1) * 2]);
                             data[current_pusher - 1].m_texture_coordinates.push_back(helper.m_texture_coordinates[(it[i - (i == 1 ? 1 : 0)] - 1) * 2 + 1]);
@@ -171,6 +179,8 @@ namespace qe
         }
     
     public:
+        uint32_t m_vertices_amount_loaded = 0;
+
         QE_ModelLoader() {}
 
         bool m_debug = false;
@@ -183,6 +193,7 @@ namespace qe
             default:
             case ModelType::OBJ:
                 data = LoadOBJ(path);
+                //m_data.clear();
                 m_data.resize(data.size());
                 
                 for(int i = 0; i < data.size(); i++) {

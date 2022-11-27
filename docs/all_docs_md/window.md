@@ -81,6 +81,32 @@
         }
        ```
 
+### qe::Window::FixedUpdate()
+
+    Description:
+        qe::Window::FixedUpdate() runs every qe::Window::m_fixed_update_per_second times per second, on separated thread. It is also defined in qe::Window class as `virtual void FixedUpdate() {}`, so you also need to override it to actually use it.
+
+    Use example:
+
+        ```c++
+        // Needed to get qe::Window class
+        #include "../../../engine/quintus.hpp"
+
+        class Game : public qe::Window {
+            virtual void FixedUpdate() override;
+        };
+
+        void Game::FixedUpdate() {
+            // Code here
+        }
+
+        void Application() {
+            Game game;
+
+            game.run();
+        }
+       ```
+
 ### qe::Window::LateUpdate()
 
     Description:
@@ -309,8 +335,97 @@
         }
        ```
 
+### qe::Window::getKeyPress(Keys key, KeyState key_state)
+
+    Description:
+        qe::Window::getKeyPress(Keys key, KeyState key_state) return true or false depending on if key have key_state.
+
+    Use example:
+        
+        ```c++
+        // Needed to get qe::Window class
+        #include "../../../engine/quintus.hpp"
+
+        class Game : public qe::Window {
+            virtual void Start() override;
+        };
+
+        void Game::Start() {
+            // Code here
+
+            bool a_pressed = Game::getKeyPress(qe::A, qe::PRESS);
+            bool a_released = Game::getKeyPress(qe::A, qe::RELEASE);
+        }
+
+        void Application() {
+            Game game;
+
+            game.run();
+        }
+       ```
+
+### qe::Window::setCursorState(CursorState cursor_state)
+
+    Description:
+        qe::Window::setCursorState(CursorState cursor_state) sets visibility of mouse cursor.
+
+    Use example:
+        
+        ```c++
+        // Needed to get qe::Window class
+        #include "../../../engine/quintus.hpp"
+
+        class Game : public qe::Window {
+            virtual void Start() override;
+        };
+
+        void Game::Start() {
+            // Code here
+
+            Game::setCursorState(qe::NORMAL);
+        }
+
+        void Application() {
+            Game game;
+
+            game.run();
+        }
+       ```
+
+### qe::Window::setFullscreen(bool fullscreen)
+    Description:
+        qe::Window::setFullscreen(bool fullscreen) sets fullscreen on primary monitor.
+
+    Use example:
+        
+        ```c++
+        // Needed to get qe::Window class
+        #include "../../../engine/quintus.hpp"
+
+        class Game : public qe::Window {
+            virtual void Start() override;
+        };
+
+        void Game::Start() {
+            // Code here
+
+            Game::setFullscreen(true);
+        }
+
+        void Application() {
+            Game game;
+
+            game.run();
+        }
+       ```
+
 ## qe::Window variables to set
 ---------------
+
+### qe::Window::m_fixed_update_per_second
+
+    Description:
+        qe::Window::m_fixed_update_per_second sets how many times per second qe::Window::FixedUpdate() updates. Max value is 1000000000.
 
 ### qe::Window::m_fov
     

@@ -1,16 +1,20 @@
 #include "../../../engine/quintus.hpp"
 #include <random>
+#include <future>
+#include <thread>
 
 class Game : public qe::Window {
 public:
     virtual void Start() override;
     virtual void Update() override;
     virtual void LateUpdate() override;
+    virtual void FixedUpdate() override;
     void input();
 };
 
 qe::Renderer test1;
 qe::Renderer skybox;
+qe::Renderer sphere;
 qe::math::Vector<float> playerPos = qe::math::Vector<float>(0.0f);
 qe::math::Vector<float> playerDir = qe::math::Vector<float>(0.0f, 0.0f, 1.0f);
 qe::math::Vector<float> playerVelocity = qe::math::Vector<float>(0.0f);
@@ -23,6 +27,7 @@ float pitch = 0.0f;
 bool move_press = false;
 bool strafe_press = false;
 const float playerSpeed = 10.0f;
+
 
 qe::RenderedData triangle = {
     {
@@ -141,14 +146,28 @@ void Game::input() {
     //printf("Velocities: %f %f %f\n", playerVelocity.x, playerVelocity.y, playerVelocity.z);
 }
 
+qe::ModelLoader ml;
+qe::ModelLoader ml2;
+
+bool models_loaded = false;
+
+void load_models() {
+    sphere.m_render = false;
+    ml2.LoadModelUnindexed("data/models/test.obj", qe::OBJ);
+
+    for(int i = 0; i < 3000; i++) {
+        sphere.AddModel(ml2.GetModelData(), "Sphere" + std::to_string(i + 1), false);
+        sphere.SetPositionByID(sphere.GetIdFromName("Sphere" + std::to_string(i + 1)), (float)i * 4.0f, 0.0f, 0.0f, false);
+    }
+
+    models_loaded = true;
+}
+
 void Game::Start() {
     // Code here
 
-    Game::m_far = 10000.0f;
+    Game::m_far = 3000.0f;
     glfwSetCursorPosCallback(Game::getWindowPtr(), mouse);
-
-    qe::ModelLoader ml;
-    ml.m_debug = false;
 
     ml.LoadModelUnindexed("data/models/test_cube.obj", qe::ModelType::OBJ);
 
@@ -159,33 +178,51 @@ void Game::Start() {
 
     Game::AddLayer(&test1);
     Game::AddLayer(&skybox);
+    Game::AddLayer(&sphere);
+
+    sphere.AddShader(qe::LoadShader(qe::vertex_shader, qe::vertex));
+    sphere.AddShader(qe::LoadShader(qe::color_fragment_shader, qe::ShaderType::fragment));
 
     test1.AddShader(qe::LoadShader(qe::vertex_shader, qe::ShaderType::vertex));
-    test1.AddShader(qe::LoadShaderFromPath("data/shaders/light.frag", qe::ShaderType::fragment));
+    test1.AddShader(qe::LoadShader(qe::texture_fragment_shader, qe::ShaderType::fragment));
+    //test1.AddShader(qe::LoadShaderFromPath("data/shaders/light.frag", qe::ShaderType::fragment));
     for(int i = 0; i < ml.GetModelVectorData().size(); i++) {
-        test1.AddModel(ml.GetModelVectorData()[i]);
+        test1.AddModel(triangle);
     }
     test1.AddModel(triangle);
 
-    test1.AddTexture("data/textures/test2k.png");
+    test1.AddTexture("data/textures/test_skybox2k.png");
     test1.SetModelTexture(0, 0);
-
 
     skybox.AddShader(qe::LoadShader(qe::vertex_shader, qe::ShaderType::vertex));
     skybox.AddShader(qe::LoadShader(qe::texture_fragment_shader, qe::ShaderType::fragment));
     for(int i = 0; i < ml.GetModelVectorData().size(); i++) {
         skybox.AddModel(ml.GetModelVectorData()[i]);
     }
-    skybox.AddTexture("data/textures/test_skybox2k.png");
+    skybox.AddTexture("data/textures/skybox1.png");
     skybox.SetModelTexture(0, 0);
     skybox.SetScaleByID(0, 1000.0f, 1000.0f, 1000.0f);
 
-    test1.ForceRejoin();
-    skybox.ForceRejoin();
+    std::thread load_model_multitask(load_models);
+
+    load_model_multitask.detach();
+}
+
+void Game::FixedUpdate() {
+    
 }
 
 void Game::Update() {
     // Code here
+
+    //printf("Vertices: %d FPS: %f, Max threads: %d\n", ml2.m_vertices_amount_loaded * 3000, 1.0f / Game::time.GetDeltaTime(), std::thread::hardware_concurrency());
+
+    //test1.SetColorByID(test1.GetIdFromName("Terrain"), 0.4f, 0.4f, 0.4f, 1.0f);
+
+    if(models_loaded && !sphere.m_render) {
+        sphere.BindToBuffers();
+        sphere.m_render = true;
+    }
 
     if(glfwGetKey(Game::getWindowPtr(), GLFW_KEY_R) == GLFW_PRESS) {
         test1.ClearShaders();
@@ -197,9 +234,10 @@ void Game::Update() {
 
     qe::g_view = glm::lookAt(glm::vec3(playerPos.x, playerPos.y, playerPos.z), glm::vec3(playerPos.x, playerPos.y, playerPos.z) + glm::vec3(playerDir.x, playerDir.y, playerDir.z), glm::vec3(0.0f, 1.0f, 0.0f));
 
-    //test1.SetRotationByID(0, Game::time.GetTime() * 1.0f, Game::time.GetTime() * 1.0f, Game::time.GetTime() * 1.0f);
+    test1.SetRotationByID(0, Game::time.GetTime() * 1.0f, Game::time.GetTime() * 1.0f, Game::time.GetTime() * 1.0f);
 
     skybox.SetPosition(playerPos.x, playerPos.y, playerPos.z);
+    test1.SetColorByID(1, 0.0f, 0.0f, 0.0f, 0.0f);
 }
 
 qe::Collider cl;
@@ -212,7 +250,7 @@ void Game::LateUpdate() {
     cl2.m_size = qe::math::Vector<float>(triangle.m_vertices[3], triangle.m_vertices[4], triangle.m_vertices[5]);
     cl2.m_third_point = qe::math::Vector<float>(triangle.m_vertices[6], triangle.m_vertices[7], triangle.m_vertices[8]);
 
-    printf("Collision: %d\n", cl.CheckPointToPlane(&cl2));
+    //printf("Collision: %d\n", cl.CheckPointToPlane(&cl2));
 
     input();
 }

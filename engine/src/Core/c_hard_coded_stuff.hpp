@@ -58,7 +58,7 @@ namespace qe {
     "in float TexID;\n"
     "out vec4 FragmentColor;\n"
     "void main() {\n"
-    "FragmentColor = texture(Textures[int(TexID)], Tex) * Col;\n"
+    "FragmentColor = texture(Textures[31], Tex) * Col;\n"
     "}\n\0";
 
     const RenderedData cube = {
@@ -323,11 +323,11 @@ namespace qe {
         },
         {
             1.0f, 1.0f,
-            1.0f, 0.0f,
             0.0f, 1.0f,
+            1.0f, 0.0f,
 
-            1.0f, 0.0f,
             0.0f, 1.0f,
+            1.0f, 0.0f,
             0.0f, 0.0f,
         },
         {

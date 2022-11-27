@@ -33,10 +33,15 @@ namespace qe
 
         glm::mat4 m_model = glm::mat4(1.0f);
 
+
+        bool m_buffer_needs_rebind = false;
+
     public:
         bool m_render = true;
         bool m_with_indices = false;
         bool m_triangles = true;
+        bool m_renderer_created = false;
+        bool m_render_pixels = false;
 
         QE_Renderer() { m_auto_start = true; m_layer_debug_name = "Renderer"; }
 
@@ -83,15 +88,14 @@ namespace qe
         virtual void Start() override {
             ClearShaders();
 
-            for(auto tex : m_textures) {
-                tex.Init();
-            }
-
             m_vao.Bind();
 
             m_sh.Bind();
 
-            m_textures[0].Uniform(m_sh.m_id, "Textures");
+            for(auto tex : m_textures) {
+                tex.Init();
+                tex.Uniform(m_sh.m_id, "Textures");
+            }
 
             m_vbos.resize(5);
             
@@ -103,6 +107,8 @@ namespace qe
 
             m_vao.Unbind();
             m_sh.Unbind();
+
+            m_renderer_created = true;
         }
 
         // FIXME: Adding more than 1 texture can be buggy
@@ -112,18 +118,21 @@ namespace qe
          * @param name 
          */
         void AddTexture(const std::string name) {
+            //printf("Texxure amount: %d, Priority %d, Name %s\n", m_textures_amount, m_textures_priority_queue.size(), name.c_str());
+            //fflush(stdout);
+
             if(m_textures_amount < 32 && m_textures_priority_queue.size() == 0) {
-                m_textures[m_textures_amount].Bind(name, GL_REPEAT);
+                m_textures[m_textures_amount].Bind(name, GL_REPEAT, m_render_pixels);
                 m_textures_amount++;
             }
             else if(m_textures_priority_queue.size() > 0) {
-                m_textures[m_textures_priority_queue[0]].Bind(name, GL_REPEAT);
+                m_textures[m_textures_priority_queue[0]].Bind(name, GL_REPEAT, m_render_pixels);
 
                 m_textures_priority_queue.erase(m_textures_priority_queue.begin());
                 m_textures_amount++;
             }
             else {
-                m_textures[31].Bind(name, GL_REPEAT);
+                m_textures[31].Bind(name, GL_REPEAT, m_render_pixels);
             }
         }
 
@@ -146,9 +155,20 @@ namespace qe
          * @param texture_id 
          */
         void SetModelTexture(uint32_t model_id, uint32_t texture_id) {
-            for(int i = m_rendered.m_data_sizes[model_id]; i < m_rendered.m_data_end[model_id]; i++) {
+            //printf("Model end: %d Model size: %d Textture id: %d\n",  m_rendered.m_data_end[model_id], m_rendered.m_data_sizes[model_id], texture_id);
+            //fflush(stdout);
+
+            for(int i = m_rendered.m_data_end[model_id] - m_rendered.m_data_sizes[model_id]; i < m_rendered.m_data_end[model_id]; i++) {
                 m_rendered.m_texture_index[i] = static_cast<float>(texture_id);
+                //printf("Texture: %f set to texture index %d times\n", static_cast<float>(texture_id), i);
+                //fflush(stdout);
             }
+
+            m_vao.Bind();
+            
+            m_vbos[4].Bind(m_rendered.m_texture_index, 4, 1);
+
+            m_vao.Unbind();
         }
 
         /**
@@ -199,16 +219,16 @@ namespace qe
                 glUniform3f(glGetUniformLocation(m_sh.m_id, "globalLight"), g_globalLight.x, g_globalLight.y, g_globalLight.z);
 
                 if(!m_with_indices & m_triangles) {
-                    glDrawArrays(GL_TRIANGLES, 0, m_rendered.m_joined_data.m_vertices.size() * 2);
+                    glDrawArrays(GL_TRIANGLES, 0, m_rendered.m_joined_data.m_vertices.size() / 3);
                 }
                 else if(m_with_indices & m_triangles) {
-                    glDrawElements(GL_TRIANGLES, m_rendered.m_joined_data.m_vertices.size() * 2, GL_UNSIGNED_INT, nullptr);
+                    glDrawElements(GL_TRIANGLES, m_rendered.m_joined_data.m_vertices.size() / 3, GL_UNSIGNED_INT, nullptr);
                 }
                 else if(!m_with_indices & !m_triangles) {
-                    glDrawArrays(GL_LINES, 0, m_rendered.m_joined_data.m_vertices.size() * 2);
+                    glDrawArrays(GL_LINES, 0, m_rendered.m_joined_data.m_vertices.size() / 3);
                 }
                 else if(m_with_indices & !m_triangles) {
-                    glDrawElements(GL_LINES, m_rendered.m_joined_data.m_vertices.size() * 2, GL_UNSIGNED_INT, nullptr);
+                    glDrawElements(GL_LINES, m_rendered.m_joined_data.m_vertices.size() / 3, GL_UNSIGNED_INT, nullptr);
                 }
             
                 m_vao.Unbind();
@@ -281,7 +301,7 @@ namespace qe
          * @param y 
          * @param z 
          */
-        void SetPositionByID(uint32_t id, float x, float y, float z) {
+        void SetPositionByID(uint32_t id, float x, float y, float z, bool bind_to_buffer = true) {
             if( m_rendered.m_axis_helper[id].position[0] != x ||
                 m_rendered.m_axis_helper[id].position[1] != y ||
                 m_rendered.m_axis_helper[id].position[2] != z) {
@@ -291,38 +311,43 @@ namespace qe
                 m_rendered.m_axis_helper[id].position[2] = z;
 
                 for(size_t i = 0; i < m_rendered.m_data_sizes[id]; i++) {
-                    m_rendered.m_data[id].m_vertices[i * 3 + 0] = m_rendered.m_joined_data.m_vertices[(m_rendered.m_data_end[id] - m_rendered.m_data_sizes[id]) + (i * 3 + 0)] = m_rendered.m_original_data[id].m_vertices[i * 3 + 0] * m_rendered.m_axis_helper[id].scale[0] + m_rendered.m_axis_helper[id].position[0];
-                    m_rendered.m_data[id].m_vertices[i * 3 + 1] = m_rendered.m_joined_data.m_vertices[(m_rendered.m_data_end[id] - m_rendered.m_data_sizes[id]) + (i * 3 + 1)] = m_rendered.m_original_data[id].m_vertices[i * 3 + 1] * m_rendered.m_axis_helper[id].scale[1] + m_rendered.m_axis_helper[id].position[1];
-                    m_rendered.m_data[id].m_vertices[i * 3 + 2] = m_rendered.m_joined_data.m_vertices[(m_rendered.m_data_end[id] - m_rendered.m_data_sizes[id]) + (i * 3 + 2)] = m_rendered.m_original_data[id].m_vertices[i * 3 + 2] * m_rendered.m_axis_helper[id].scale[2] + m_rendered.m_axis_helper[id].position[2];
+                    m_rendered.m_data[id].m_vertices[i * 3 + 0] = m_rendered.m_joined_data.m_vertices[(((m_rendered.m_data_end[id] - m_rendered.m_data_sizes[id]) + i) * 3 + 0)] = m_rendered.m_original_data[id].m_vertices[i * 3 + 0] * m_rendered.m_axis_helper[id].scale[0] + m_rendered.m_axis_helper[id].position[0];
+                    m_rendered.m_data[id].m_vertices[i * 3 + 1] = m_rendered.m_joined_data.m_vertices[(((m_rendered.m_data_end[id] - m_rendered.m_data_sizes[id]) + i) * 3 + 1)] = m_rendered.m_original_data[id].m_vertices[i * 3 + 1] * m_rendered.m_axis_helper[id].scale[1] + m_rendered.m_axis_helper[id].position[1];
+                    m_rendered.m_data[id].m_vertices[i * 3 + 2] = m_rendered.m_joined_data.m_vertices[(((m_rendered.m_data_end[id] - m_rendered.m_data_sizes[id]) + i) * 3 + 2)] = m_rendered.m_original_data[id].m_vertices[i * 3 + 2] * m_rendered.m_axis_helper[id].scale[2] + m_rendered.m_axis_helper[id].position[2];
                 
                     float h_x = 0.0f;
                     float h_y = 0.0f;
                     float h_z = 0.0f;
 
-                    h_y = m_rendered.m_data[id].m_vertices[i * 3 + 1] = m_rendered.m_joined_data.m_vertices[(m_rendered.m_data_end[id] - m_rendered.m_data_sizes[id]) + (i * 3 + 1)];
-                    h_z = m_rendered.m_data[id].m_vertices[i * 3 + 2] = m_rendered.m_joined_data.m_vertices[(m_rendered.m_data_end[id] - m_rendered.m_data_sizes[id]) + (i * 3 + 2)];
+                    h_y = m_rendered.m_joined_data.m_vertices[(((m_rendered.m_data_end[id] - m_rendered.m_data_sizes[id]) + i) * 3 + 1)];
+                    h_z = m_rendered.m_joined_data.m_vertices[(((m_rendered.m_data_end[id] - m_rendered.m_data_sizes[id]) + i) * 3 + 2)];
                 
-                    m_rendered.m_data[id].m_vertices[i * 3 + 1] = m_rendered.m_joined_data.m_vertices[(m_rendered.m_data_end[id] - m_rendered.m_data_sizes[id]) + (i * 3 + 1)] = (cos(m_rendered.m_axis_helper[id].rotation[0]) * h_y - sin(m_rendered.m_axis_helper[id].rotation[0]) * h_z);
-                    m_rendered.m_data[id].m_vertices[i * 3 + 2] = m_rendered.m_joined_data.m_vertices[(m_rendered.m_data_end[id] - m_rendered.m_data_sizes[id]) + (i * 3 + 2)] = (cos(m_rendered.m_axis_helper[id].rotation[0]) * h_z + sin(m_rendered.m_axis_helper[id].rotation[0]) * h_y);
+                    m_rendered.m_data[id].m_vertices[i * 3 + 1] = m_rendered.m_joined_data.m_vertices[(((m_rendered.m_data_end[id] - m_rendered.m_data_sizes[id]) + i) * 3 + 1)] = (cos(m_rendered.m_axis_helper[id].rotation[0]) * h_y - sin(m_rendered.m_axis_helper[id].rotation[0]) * h_z);
+                    m_rendered.m_data[id].m_vertices[i * 3 + 2] = m_rendered.m_joined_data.m_vertices[(((m_rendered.m_data_end[id] - m_rendered.m_data_sizes[id]) + i) * 3 + 2)] = (cos(m_rendered.m_axis_helper[id].rotation[0]) * h_z + sin(m_rendered.m_axis_helper[id].rotation[0]) * h_y);
 
-                    h_x = m_rendered.m_data[id].m_vertices[i * 3 + 0] = m_rendered.m_joined_data.m_vertices[(m_rendered.m_data_end[id] - m_rendered.m_data_sizes[id]) + (i * 3 + 0)];
-                    h_z = m_rendered.m_data[id].m_vertices[i * 3 + 2] = m_rendered.m_joined_data.m_vertices[(m_rendered.m_data_end[id] - m_rendered.m_data_sizes[id]) + (i * 3 + 2)];
+                    h_x = m_rendered.m_joined_data.m_vertices[(((m_rendered.m_data_end[id] - m_rendered.m_data_sizes[id]) + i) * 3 + 0)];
+                    h_z = m_rendered.m_joined_data.m_vertices[(((m_rendered.m_data_end[id] - m_rendered.m_data_sizes[id]) + i) * 3 + 2)];
                 
-                    m_rendered.m_data[id].m_vertices[i * 3 + 0] = m_rendered.m_joined_data.m_vertices[(m_rendered.m_data_end[id] - m_rendered.m_data_sizes[id]) + (i * 3 + 0)] = (cos(m_rendered.m_axis_helper[id].rotation[1]) * h_x - sin(m_rendered.m_axis_helper[id].rotation[1]) * h_z);
-                    m_rendered.m_data[id].m_vertices[i * 3 + 2] = m_rendered.m_joined_data.m_vertices[(m_rendered.m_data_end[id] - m_rendered.m_data_sizes[id]) + (i * 3 + 2)] = (cos(m_rendered.m_axis_helper[id].rotation[1]) * h_z + sin(m_rendered.m_axis_helper[id].rotation[1]) * h_x);
+                    m_rendered.m_data[id].m_vertices[i * 3 + 0] = m_rendered.m_joined_data.m_vertices[(((m_rendered.m_data_end[id] - m_rendered.m_data_sizes[id]) + i) * 3 + 0)] = (cos(m_rendered.m_axis_helper[id].rotation[1]) * h_x - sin(m_rendered.m_axis_helper[id].rotation[1]) * h_z);
+                    m_rendered.m_data[id].m_vertices[i * 3 + 2] = m_rendered.m_joined_data.m_vertices[(((m_rendered.m_data_end[id] - m_rendered.m_data_sizes[id]) + i) * 3 + 2)] = (cos(m_rendered.m_axis_helper[id].rotation[1]) * h_z + sin(m_rendered.m_axis_helper[id].rotation[1]) * h_x);
 
-                    h_x = m_rendered.m_data[id].m_vertices[i * 3 + 0] = m_rendered.m_joined_data.m_vertices[(m_rendered.m_data_end[id] - m_rendered.m_data_sizes[id]) + (i * 3 + 0)];
-                    h_y = m_rendered.m_data[id].m_vertices[i * 3 + 1] = m_rendered.m_joined_data.m_vertices[(m_rendered.m_data_end[id] - m_rendered.m_data_sizes[id]) + (i * 3 + 1)];
+                    h_x = m_rendered.m_joined_data.m_vertices[(((m_rendered.m_data_end[id] - m_rendered.m_data_sizes[id]) + i) * 3 + 0)];
+                    h_y = m_rendered.m_joined_data.m_vertices[(((m_rendered.m_data_end[id] - m_rendered.m_data_sizes[id]) + i) * 3 + 1)];
                 
-                    m_rendered.m_data[id].m_vertices[i * 3 + 0] = m_rendered.m_joined_data.m_vertices[(m_rendered.m_data_end[id] - m_rendered.m_data_sizes[id]) + (i * 3 + 0)] = (cos(m_rendered.m_axis_helper[id].rotation[2]) * h_x - sin(m_rendered.m_axis_helper[id].rotation[2]) * h_y);
-                    m_rendered.m_data[id].m_vertices[i * 3 + 1] = m_rendered.m_joined_data.m_vertices[(m_rendered.m_data_end[id] - m_rendered.m_data_sizes[id]) + (i * 3 + 1)] = (cos(m_rendered.m_axis_helper[id].rotation[2]) * h_y + sin(m_rendered.m_axis_helper[id].rotation[2]) * h_x);
+                    m_rendered.m_data[id].m_vertices[i * 3 + 0] = m_rendered.m_joined_data.m_vertices[(((m_rendered.m_data_end[id] - m_rendered.m_data_sizes[id]) + i) * 3 + 0)] = (cos(m_rendered.m_axis_helper[id].rotation[2]) * h_x - sin(m_rendered.m_axis_helper[id].rotation[2]) * h_y);
+                    m_rendered.m_data[id].m_vertices[i * 3 + 1] = m_rendered.m_joined_data.m_vertices[(((m_rendered.m_data_end[id] - m_rendered.m_data_sizes[id]) + i) * 3 + 1)] = (cos(m_rendered.m_axis_helper[id].rotation[2]) * h_y + sin(m_rendered.m_axis_helper[id].rotation[2]) * h_x);
                 }
 
-                m_vao.Bind();
+                if(bind_to_buffer) {
+                    m_vao.Bind();
 
-                m_vbos[0].Bind(m_rendered.m_joined_data.m_vertices, 0);
-
-                m_vao.Unbind();
+                    m_vbos[0].Bind(m_rendered.m_joined_data.m_vertices, 0);
+                    
+                    m_vao.Unbind();
+                }
+                else {
+                    m_buffer_needs_rebind = true;
+                }
             }
         }
 
@@ -334,7 +359,7 @@ namespace qe
          * @param y 
          * @param z 
          */
-        void SetScaleByID(uint32_t id, float x, float y, float z) {
+        void SetScaleByID(uint32_t id, float x, float y, float z, bool bind_to_buffer = true) {
             if( m_rendered.m_axis_helper[id].scale[0] != x ||
                 m_rendered.m_axis_helper[id].scale[1] != y ||
                 m_rendered.m_axis_helper[id].scale[2] != z) {
@@ -344,38 +369,43 @@ namespace qe
                 m_rendered.m_axis_helper[id].scale[2] = z;
 
                 for(size_t i = 0; i < m_rendered.m_data_sizes[id]; i++) {
-                    m_rendered.m_data[id].m_vertices[i * 3 + 0] = m_rendered.m_joined_data.m_vertices[(m_rendered.m_data_end[id] - m_rendered.m_data_sizes[id]) + (i * 3 + 0)] = m_rendered.m_original_data[id].m_vertices[i * 3 + 0] * m_rendered.m_axis_helper[id].scale[0] + m_rendered.m_axis_helper[id].position[0];
-                    m_rendered.m_data[id].m_vertices[i * 3 + 1] = m_rendered.m_joined_data.m_vertices[(m_rendered.m_data_end[id] - m_rendered.m_data_sizes[id]) + (i * 3 + 1)] = m_rendered.m_original_data[id].m_vertices[i * 3 + 1] * m_rendered.m_axis_helper[id].scale[1] + m_rendered.m_axis_helper[id].position[1];
-                    m_rendered.m_data[id].m_vertices[i * 3 + 2] = m_rendered.m_joined_data.m_vertices[(m_rendered.m_data_end[id] - m_rendered.m_data_sizes[id]) + (i * 3 + 2)] = m_rendered.m_original_data[id].m_vertices[i * 3 + 2] * m_rendered.m_axis_helper[id].scale[2] + m_rendered.m_axis_helper[id].position[2];
+                    m_rendered.m_data[id].m_vertices[i * 3 + 0] = m_rendered.m_joined_data.m_vertices[(((m_rendered.m_data_end[id] - m_rendered.m_data_sizes[id]) + i) * 3 + 0)] = m_rendered.m_original_data[id].m_vertices[i * 3 + 0] * m_rendered.m_axis_helper[id].scale[0] + m_rendered.m_axis_helper[id].position[0];
+                    m_rendered.m_data[id].m_vertices[i * 3 + 1] = m_rendered.m_joined_data.m_vertices[(((m_rendered.m_data_end[id] - m_rendered.m_data_sizes[id]) + i) * 3 + 1)] = m_rendered.m_original_data[id].m_vertices[i * 3 + 1] * m_rendered.m_axis_helper[id].scale[1] + m_rendered.m_axis_helper[id].position[1];
+                    m_rendered.m_data[id].m_vertices[i * 3 + 2] = m_rendered.m_joined_data.m_vertices[(((m_rendered.m_data_end[id] - m_rendered.m_data_sizes[id]) + i) * 3 + 2)] = m_rendered.m_original_data[id].m_vertices[i * 3 + 2] * m_rendered.m_axis_helper[id].scale[2] + m_rendered.m_axis_helper[id].position[2];
                 
                     float h_x = 0.0f;
                     float h_y = 0.0f;
                     float h_z = 0.0f;
 
-                    h_y = m_rendered.m_data[id].m_vertices[i * 3 + 1] = m_rendered.m_joined_data.m_vertices[(m_rendered.m_data_end[id] - m_rendered.m_data_sizes[id]) + (i * 3 + 1)];
-                    h_z = m_rendered.m_data[id].m_vertices[i * 3 + 2] = m_rendered.m_joined_data.m_vertices[(m_rendered.m_data_end[id] - m_rendered.m_data_sizes[id]) + (i * 3 + 2)];
+                    h_y = m_rendered.m_joined_data.m_vertices[(((m_rendered.m_data_end[id] - m_rendered.m_data_sizes[id]) + i) * 3 + 1)];
+                    h_z = m_rendered.m_joined_data.m_vertices[(((m_rendered.m_data_end[id] - m_rendered.m_data_sizes[id]) + i) * 3 + 2)];
                 
-                    m_rendered.m_data[id].m_vertices[i * 3 + 1] = m_rendered.m_joined_data.m_vertices[(m_rendered.m_data_end[id] - m_rendered.m_data_sizes[id]) + (i * 3 + 1)] = (cos(m_rendered.m_axis_helper[id].rotation[0]) * h_y - sin(m_rendered.m_axis_helper[id].rotation[0]) * h_z);
-                    m_rendered.m_data[id].m_vertices[i * 3 + 2] = m_rendered.m_joined_data.m_vertices[(m_rendered.m_data_end[id] - m_rendered.m_data_sizes[id]) + (i * 3 + 2)] = (cos(m_rendered.m_axis_helper[id].rotation[0]) * h_z + sin(m_rendered.m_axis_helper[id].rotation[0]) * h_y);
+                    m_rendered.m_data[id].m_vertices[i * 3 + 1] = m_rendered.m_joined_data.m_vertices[(((m_rendered.m_data_end[id] - m_rendered.m_data_sizes[id]) + i) * 3 + 1)] = (cos(m_rendered.m_axis_helper[id].rotation[0]) * h_y - sin(m_rendered.m_axis_helper[id].rotation[0]) * h_z);
+                    m_rendered.m_data[id].m_vertices[i * 3 + 2] = m_rendered.m_joined_data.m_vertices[(((m_rendered.m_data_end[id] - m_rendered.m_data_sizes[id]) + i) * 3 + 2)] = (cos(m_rendered.m_axis_helper[id].rotation[0]) * h_z + sin(m_rendered.m_axis_helper[id].rotation[0]) * h_y);
 
-                    h_x = m_rendered.m_data[id].m_vertices[i * 3 + 0] = m_rendered.m_joined_data.m_vertices[(m_rendered.m_data_end[id] - m_rendered.m_data_sizes[id]) + (i * 3 + 0)];
-                    h_z = m_rendered.m_data[id].m_vertices[i * 3 + 2] = m_rendered.m_joined_data.m_vertices[(m_rendered.m_data_end[id] - m_rendered.m_data_sizes[id]) + (i * 3 + 2)];
+                    h_x = m_rendered.m_joined_data.m_vertices[(((m_rendered.m_data_end[id] - m_rendered.m_data_sizes[id]) + i) * 3 + 0)];
+                    h_z = m_rendered.m_joined_data.m_vertices[(((m_rendered.m_data_end[id] - m_rendered.m_data_sizes[id]) + i) * 3 + 2)];
                 
-                    m_rendered.m_data[id].m_vertices[i * 3 + 0] = m_rendered.m_joined_data.m_vertices[(m_rendered.m_data_end[id] - m_rendered.m_data_sizes[id]) + (i * 3 + 0)] = (cos(m_rendered.m_axis_helper[id].rotation[1]) * h_x - sin(m_rendered.m_axis_helper[id].rotation[1]) * h_z);
-                    m_rendered.m_data[id].m_vertices[i * 3 + 2] = m_rendered.m_joined_data.m_vertices[(m_rendered.m_data_end[id] - m_rendered.m_data_sizes[id]) + (i * 3 + 2)] = (cos(m_rendered.m_axis_helper[id].rotation[1]) * h_z + sin(m_rendered.m_axis_helper[id].rotation[1]) * h_x);
+                    m_rendered.m_data[id].m_vertices[i * 3 + 0] = m_rendered.m_joined_data.m_vertices[(((m_rendered.m_data_end[id] - m_rendered.m_data_sizes[id]) + i) * 3 + 0)] = (cos(m_rendered.m_axis_helper[id].rotation[1]) * h_x - sin(m_rendered.m_axis_helper[id].rotation[1]) * h_z);
+                    m_rendered.m_data[id].m_vertices[i * 3 + 2] = m_rendered.m_joined_data.m_vertices[(((m_rendered.m_data_end[id] - m_rendered.m_data_sizes[id]) + i) * 3 + 2)] = (cos(m_rendered.m_axis_helper[id].rotation[1]) * h_z + sin(m_rendered.m_axis_helper[id].rotation[1]) * h_x);
 
-                    h_x = m_rendered.m_data[id].m_vertices[i * 3 + 0] = m_rendered.m_joined_data.m_vertices[(m_rendered.m_data_end[id] - m_rendered.m_data_sizes[id]) + (i * 3 + 0)];
-                    h_y = m_rendered.m_data[id].m_vertices[i * 3 + 1] = m_rendered.m_joined_data.m_vertices[(m_rendered.m_data_end[id] - m_rendered.m_data_sizes[id]) + (i * 3 + 1)];
+                    h_x = m_rendered.m_joined_data.m_vertices[(((m_rendered.m_data_end[id] - m_rendered.m_data_sizes[id]) + i) * 3 + 0)];
+                    h_y = m_rendered.m_joined_data.m_vertices[(((m_rendered.m_data_end[id] - m_rendered.m_data_sizes[id]) + i) * 3 + 1)];
                 
-                    m_rendered.m_data[id].m_vertices[i * 3 + 0] = m_rendered.m_joined_data.m_vertices[(m_rendered.m_data_end[id] - m_rendered.m_data_sizes[id]) + (i * 3 + 0)] = (cos(m_rendered.m_axis_helper[id].rotation[2]) * h_x - sin(m_rendered.m_axis_helper[id].rotation[2]) * h_y);
-                    m_rendered.m_data[id].m_vertices[i * 3 + 1] = m_rendered.m_joined_data.m_vertices[(m_rendered.m_data_end[id] - m_rendered.m_data_sizes[id]) + (i * 3 + 1)] = (cos(m_rendered.m_axis_helper[id].rotation[2]) * h_y + sin(m_rendered.m_axis_helper[id].rotation[2]) * h_x);
+                    m_rendered.m_data[id].m_vertices[i * 3 + 0] = m_rendered.m_joined_data.m_vertices[(((m_rendered.m_data_end[id] - m_rendered.m_data_sizes[id]) + i) * 3 + 0)] = (cos(m_rendered.m_axis_helper[id].rotation[2]) * h_x - sin(m_rendered.m_axis_helper[id].rotation[2]) * h_y);
+                    m_rendered.m_data[id].m_vertices[i * 3 + 1] = m_rendered.m_joined_data.m_vertices[(((m_rendered.m_data_end[id] - m_rendered.m_data_sizes[id]) + i) * 3 + 1)] = (cos(m_rendered.m_axis_helper[id].rotation[2]) * h_y + sin(m_rendered.m_axis_helper[id].rotation[2]) * h_x);
                 }
 
-                m_vao.Bind();
+                if(bind_to_buffer) {
+                    m_vao.Bind();
 
-                m_vbos[0].Bind(m_rendered.m_joined_data.m_vertices, 0);
-
-                m_vao.Unbind();
+                    m_vbos[0].Bind(m_rendered.m_joined_data.m_vertices, 0);
+                    
+                    m_vao.Unbind();
+                }
+                else {
+                    m_buffer_needs_rebind = true;
+                }
             }
         }
 
@@ -387,7 +417,7 @@ namespace qe
          * @param y 
          * @param z 
          */
-        void SetRotationByID(uint32_t id, float x, float y, float z) {
+        void SetRotationByID(uint32_t id, float x, float y, float z, bool bind_to_buffer = true) {
             if( m_rendered.m_axis_helper[id].rotation[0] != x ||
                 m_rendered.m_axis_helper[id].rotation[1] != y ||
                 m_rendered.m_axis_helper[id].rotation[2] != z) {
@@ -397,42 +427,46 @@ namespace qe
                 m_rendered.m_axis_helper[id].rotation[2] = z;
 
                 for(size_t i = 0; i < m_rendered.m_data_sizes[id]; i++) {
-                    m_rendered.m_data[id].m_vertices[i * 3 + 0] = m_rendered.m_joined_data.m_vertices[(m_rendered.m_data_end[id] - m_rendered.m_data_sizes[id]) + (i * 3 + 0)] = m_rendered.m_original_data[id].m_vertices[i * 3 + 0] * m_rendered.m_axis_helper[id].scale[0] + m_rendered.m_axis_helper[id].position[0];
-                    m_rendered.m_data[id].m_vertices[i * 3 + 1] = m_rendered.m_joined_data.m_vertices[(m_rendered.m_data_end[id] - m_rendered.m_data_sizes[id]) + (i * 3 + 1)] = m_rendered.m_original_data[id].m_vertices[i * 3 + 1] * m_rendered.m_axis_helper[id].scale[1] + m_rendered.m_axis_helper[id].position[1];
-                    m_rendered.m_data[id].m_vertices[i * 3 + 2] = m_rendered.m_joined_data.m_vertices[(m_rendered.m_data_end[id] - m_rendered.m_data_sizes[id]) + (i * 3 + 2)] = m_rendered.m_original_data[id].m_vertices[i * 3 + 2] * m_rendered.m_axis_helper[id].scale[2] + m_rendered.m_axis_helper[id].position[2];
+                    m_rendered.m_data[id].m_vertices[i * 3 + 0] = m_rendered.m_joined_data.m_vertices[(((m_rendered.m_data_end[id] - m_rendered.m_data_sizes[id]) + i) * 3 + 0)] = m_rendered.m_original_data[id].m_vertices[i * 3 + 0] * m_rendered.m_axis_helper[id].scale[0] + m_rendered.m_axis_helper[id].position[0];
+                    m_rendered.m_data[id].m_vertices[i * 3 + 1] = m_rendered.m_joined_data.m_vertices[(((m_rendered.m_data_end[id] - m_rendered.m_data_sizes[id]) + i) * 3 + 1)] = m_rendered.m_original_data[id].m_vertices[i * 3 + 1] * m_rendered.m_axis_helper[id].scale[1] + m_rendered.m_axis_helper[id].position[1];
+                    m_rendered.m_data[id].m_vertices[i * 3 + 2] = m_rendered.m_joined_data.m_vertices[(((m_rendered.m_data_end[id] - m_rendered.m_data_sizes[id]) + i) * 3 + 2)] = m_rendered.m_original_data[id].m_vertices[i * 3 + 2] * m_rendered.m_axis_helper[id].scale[2] + m_rendered.m_axis_helper[id].position[2];
                 
                     float h_x = 0.0f;
                     float h_y = 0.0f;
                     float h_z = 0.0f;
 
-                    h_y = m_rendered.m_joined_data.m_vertices[(m_rendered.m_data_end[id] - m_rendered.m_data_sizes[id]) + (i * 3 + 1)];
-                    h_z = m_rendered.m_joined_data.m_vertices[(m_rendered.m_data_end[id] - m_rendered.m_data_sizes[id]) + (i * 3 + 2)];
+                    h_y = m_rendered.m_joined_data.m_vertices[(((m_rendered.m_data_end[id] - m_rendered.m_data_sizes[id]) + i) * 3 + 1)];
+                    h_z = m_rendered.m_joined_data.m_vertices[(((m_rendered.m_data_end[id] - m_rendered.m_data_sizes[id]) + i) * 3 + 2)];
                 
-                    m_rendered.m_data[id].m_vertices[i * 3 + 1] = m_rendered.m_joined_data.m_vertices[(m_rendered.m_data_end[id] - m_rendered.m_data_sizes[id]) + (i * 3 + 1)] = (cos(m_rendered.m_axis_helper[id].rotation[0]) * h_y - sin(m_rendered.m_axis_helper[id].rotation[0]) * h_z);
-                    m_rendered.m_data[id].m_vertices[i * 3 + 2] = m_rendered.m_joined_data.m_vertices[(m_rendered.m_data_end[id] - m_rendered.m_data_sizes[id]) + (i * 3 + 2)] = (cos(m_rendered.m_axis_helper[id].rotation[0]) * h_z + sin(m_rendered.m_axis_helper[id].rotation[0]) * h_y);
+                    m_rendered.m_data[id].m_vertices[i * 3 + 1] = m_rendered.m_joined_data.m_vertices[(((m_rendered.m_data_end[id] - m_rendered.m_data_sizes[id]) + i) * 3 + 1)] = (cos(m_rendered.m_axis_helper[id].rotation[0]) * h_y - sin(m_rendered.m_axis_helper[id].rotation[0]) * h_z);
+                    m_rendered.m_data[id].m_vertices[i * 3 + 2] = m_rendered.m_joined_data.m_vertices[(((m_rendered.m_data_end[id] - m_rendered.m_data_sizes[id]) + i) * 3 + 2)] = (cos(m_rendered.m_axis_helper[id].rotation[0]) * h_z + sin(m_rendered.m_axis_helper[id].rotation[0]) * h_y);
 
-                    h_x = m_rendered.m_joined_data.m_vertices[(m_rendered.m_data_end[id] - m_rendered.m_data_sizes[id]) + (i * 3 + 0)];
-                    h_z = m_rendered.m_joined_data.m_vertices[(m_rendered.m_data_end[id] - m_rendered.m_data_sizes[id]) + (i * 3 + 2)];
+                    h_x = m_rendered.m_joined_data.m_vertices[(((m_rendered.m_data_end[id] - m_rendered.m_data_sizes[id]) + i) * 3 + 0)];
+                    h_z = m_rendered.m_joined_data.m_vertices[(((m_rendered.m_data_end[id] - m_rendered.m_data_sizes[id]) + i) * 3 + 2)];
                 
-                    m_rendered.m_data[id].m_vertices[i * 3 + 0] = m_rendered.m_joined_data.m_vertices[(m_rendered.m_data_end[id] - m_rendered.m_data_sizes[id]) + (i * 3 + 0)] = (cos(m_rendered.m_axis_helper[id].rotation[1]) * h_x - sin(m_rendered.m_axis_helper[id].rotation[1]) * h_z);
-                    m_rendered.m_data[id].m_vertices[i * 3 + 2] = m_rendered.m_joined_data.m_vertices[(m_rendered.m_data_end[id] - m_rendered.m_data_sizes[id]) + (i * 3 + 2)] = (cos(m_rendered.m_axis_helper[id].rotation[1]) * h_z + sin(m_rendered.m_axis_helper[id].rotation[1]) * h_x);
+                    m_rendered.m_data[id].m_vertices[i * 3 + 0] = m_rendered.m_joined_data.m_vertices[(((m_rendered.m_data_end[id] - m_rendered.m_data_sizes[id]) + i) * 3 + 0)] = (cos(m_rendered.m_axis_helper[id].rotation[1]) * h_x - sin(m_rendered.m_axis_helper[id].rotation[1]) * h_z);
+                    m_rendered.m_data[id].m_vertices[i * 3 + 2] = m_rendered.m_joined_data.m_vertices[(((m_rendered.m_data_end[id] - m_rendered.m_data_sizes[id]) + i) * 3 + 2)] = (cos(m_rendered.m_axis_helper[id].rotation[1]) * h_z + sin(m_rendered.m_axis_helper[id].rotation[1]) * h_x);
 
-                    h_x = m_rendered.m_joined_data.m_vertices[(m_rendered.m_data_end[id] - m_rendered.m_data_sizes[id]) + (i * 3 + 0)];
-                    h_y = m_rendered.m_joined_data.m_vertices[(m_rendered.m_data_end[id] - m_rendered.m_data_sizes[id]) + (i * 3 + 1)];
+                    h_x = m_rendered.m_joined_data.m_vertices[(((m_rendered.m_data_end[id] - m_rendered.m_data_sizes[id]) + i) * 3 + 0)];
+                    h_y = m_rendered.m_joined_data.m_vertices[(((m_rendered.m_data_end[id] - m_rendered.m_data_sizes[id]) + i) * 3 + 1)];
                 
-                    m_rendered.m_data[id].m_vertices[i * 3 + 0] = m_rendered.m_joined_data.m_vertices[(m_rendered.m_data_end[id] - m_rendered.m_data_sizes[id]) + (i * 3 + 0)] = (cos(m_rendered.m_axis_helper[id].rotation[2]) * h_x - sin(m_rendered.m_axis_helper[id].rotation[2]) * h_y);
-                    m_rendered.m_data[id].m_vertices[i * 3 + 1] = m_rendered.m_joined_data.m_vertices[(m_rendered.m_data_end[id] - m_rendered.m_data_sizes[id]) + (i * 3 + 1)] = (cos(m_rendered.m_axis_helper[id].rotation[2]) * h_y + sin(m_rendered.m_axis_helper[id].rotation[2]) * h_x);
+                    m_rendered.m_data[id].m_vertices[i * 3 + 0] = m_rendered.m_joined_data.m_vertices[(((m_rendered.m_data_end[id] - m_rendered.m_data_sizes[id]) + i) * 3 + 0)] = (cos(m_rendered.m_axis_helper[id].rotation[2]) * h_x - sin(m_rendered.m_axis_helper[id].rotation[2]) * h_y);
+                    m_rendered.m_data[id].m_vertices[i * 3 + 1] = m_rendered.m_joined_data.m_vertices[(((m_rendered.m_data_end[id] - m_rendered.m_data_sizes[id]) + i) * 3 + 1)] = (cos(m_rendered.m_axis_helper[id].rotation[2]) * h_y + sin(m_rendered.m_axis_helper[id].rotation[2]) * h_x);
                 }
 
-                m_vao.Bind();
+                if(bind_to_buffer) {
+                    m_vao.Bind();
 
-                m_vbos[0].Bind(m_rendered.m_joined_data.m_vertices, 0);
-
-                m_vao.Unbind();
+                    m_vbos[0].Bind(m_rendered.m_joined_data.m_vertices, 0);
+                    
+                    m_vao.Unbind();
+                }
+                else {
+                    m_buffer_needs_rebind = true;
+                }
             }
         }
 
-        // FIXME: Colors
         /**
          * @brief Set the Color By ID
          * 
@@ -442,24 +476,29 @@ namespace qe
          * @param b 
          * @param a 
          */
-        void SetColorByID(uint32_t id, float r, float g, float b, float a) {
+        void SetColorByID(uint32_t id, float r, float g, float b, float a, bool bind_to_buffer = true) {
             if( m_rendered.m_data[id].m_color[0] != r || 
                 m_rendered.m_data[id].m_color[1] != g || 
                 m_rendered.m_data[id].m_color[2] != b || 
                 m_rendered.m_data[id].m_color[3] != a) {
 
                 for(int i = 0; i < m_rendered.m_data_sizes[id]; i++) {
-                    m_rendered.m_data[id].m_color[i * 4 + 0] = m_rendered.m_joined_data.m_color[(m_rendered.m_data_end[id] - m_rendered.m_data_sizes[id]) + (i * 4 + 0)] = r;
-                    m_rendered.m_data[id].m_color[i * 4 + 1] = m_rendered.m_joined_data.m_color[(m_rendered.m_data_end[id] - m_rendered.m_data_sizes[id]) + (i * 4 + 1)] = g;
-                    m_rendered.m_data[id].m_color[i * 4 + 2] = m_rendered.m_joined_data.m_color[(m_rendered.m_data_end[id] - m_rendered.m_data_sizes[id]) + (i * 4 + 2)] = b;
-                    m_rendered.m_data[id].m_color[i * 4 + 3] = m_rendered.m_joined_data.m_color[(m_rendered.m_data_end[id] - m_rendered.m_data_sizes[id]) + (i * 4 + 3)] = a;
+                    m_rendered.m_data[id].m_color[i * 4 + 0] = m_rendered.m_joined_data.m_color[(((m_rendered.m_data_end[id] - m_rendered.m_data_sizes[id]) + i) * 4 + 0)] = r;
+                    m_rendered.m_data[id].m_color[i * 4 + 1] = m_rendered.m_joined_data.m_color[(((m_rendered.m_data_end[id] - m_rendered.m_data_sizes[id]) + i) * 4 + 1)] = g;
+                    m_rendered.m_data[id].m_color[i * 4 + 2] = m_rendered.m_joined_data.m_color[(((m_rendered.m_data_end[id] - m_rendered.m_data_sizes[id]) + i) * 4 + 2)] = b;
+                    m_rendered.m_data[id].m_color[i * 4 + 3] = m_rendered.m_joined_data.m_color[(((m_rendered.m_data_end[id] - m_rendered.m_data_sizes[id]) + i) * 4 + 3)] = a;
                 }
 
-                m_vao.Bind();
+                if(bind_to_buffer) {
+                    m_vao.Bind();
 
-                m_vbos[1].Bind(m_rendered.m_joined_data.m_color, 1, 4);
+                    m_vbos[1].Bind(m_rendered.m_joined_data.m_color, 1, 4);
 
-                m_vao.Unbind();
+                    m_vao.Unbind();
+                }
+                else {
+                    m_buffer_needs_rebind = true;
+                }
             }
         }
 
@@ -468,38 +507,47 @@ namespace qe
          * 
          * @param data 
          */
-        void AddModel(RenderedData data) {
-            m_rendered.PushData(data);
+        void AddModel(RenderedData data, std::string model_name = "__Model__", bool bind_to_buffer = true) {
+            m_rendered.PushData(data, model_name);
 
-            m_vao.Bind();
+            if(bind_to_buffer) {
+                m_vao.Bind();
 
-            m_vbos[0].Bind(m_rendered.m_joined_data.m_vertices, 0);
-            m_vbos[1].Bind(m_rendered.m_joined_data.m_color, 1, 4);
-            m_vbos[2].Bind(m_rendered.m_joined_data.m_texture_coordinates, 2, 2);
-            m_vbos[3].Bind(m_rendered.m_joined_data.m_normals, 3);
-            m_vbos[4].Bind(m_rendered.m_texture_index, 4, 1);
+                m_vbos[0].Bind(m_rendered.m_joined_data.m_vertices, 0);
+                m_vbos[1].Bind(m_rendered.m_joined_data.m_color, 1, 4);
+                m_vbos[2].Bind(m_rendered.m_joined_data.m_texture_coordinates, 2, 2);
+                m_vbos[3].Bind(m_rendered.m_joined_data.m_normals, 3);
+                m_vbos[4].Bind(m_rendered.m_texture_index, 4, 1);
 
-            m_vao.Unbind();
+                m_vao.Unbind();
+            }
+            else {
+                m_buffer_needs_rebind = true;
+            }
         }
 
-        // FIXME: Fix removeing last model 
         /**
          * @brief Remove model from heap by data
          * 
          * @param data 
          */
-        void RemoveModel(RenderedData data) {
+        void RemoveModel(RenderedData data, bool bind_to_buffer = true) {
             m_rendered.PopData(data);
 
-            m_vao.Bind();
+            if(bind_to_buffer) {
+                m_vao.Bind();
 
-            m_vbos[0].Bind(m_rendered.m_joined_data.m_vertices, 0);
-            m_vbos[1].Bind(m_rendered.m_joined_data.m_color, 1, 4);
-            m_vbos[2].Bind(m_rendered.m_joined_data.m_texture_coordinates, 2, 2);
-            m_vbos[3].Bind(m_rendered.m_joined_data.m_normals, 3);
-            m_vbos[4].Bind(m_rendered.m_texture_index, 4, 1);
+                m_vbos[0].Bind(m_rendered.m_joined_data.m_vertices, 0);
+                m_vbos[1].Bind(m_rendered.m_joined_data.m_color, 1, 4);
+                m_vbos[2].Bind(m_rendered.m_joined_data.m_texture_coordinates, 2, 2);
+                m_vbos[3].Bind(m_rendered.m_joined_data.m_normals, 3);
+                m_vbos[4].Bind(m_rendered.m_texture_index, 4, 1);
 
-            m_vao.Unbind();
+                m_vao.Unbind();
+            }
+            else {
+                m_buffer_needs_rebind = true;
+            }
         }
 
         /**
@@ -507,18 +555,61 @@ namespace qe
          * 
          * @param id 
          */
-        void RemoveModel(uint32_t id) {
+        void RemoveModel(uint32_t id, bool bind_to_buffer = true) {
             m_rendered.PopData(id);
             
-            m_vao.Bind();
+            if(bind_to_buffer) {
+                m_vao.Bind();
 
-            m_vbos[0].Bind(m_rendered.m_joined_data.m_vertices, 0);
-            m_vbos[1].Bind(m_rendered.m_joined_data.m_color, 1, 4);
-            m_vbos[2].Bind(m_rendered.m_joined_data.m_texture_coordinates, 2, 2);
-            m_vbos[3].Bind(m_rendered.m_joined_data.m_normals, 3);
-            m_vbos[4].Bind(m_rendered.m_texture_index, 4, 1);
+                m_vbos[0].Bind(m_rendered.m_joined_data.m_vertices, 0);
+                m_vbos[1].Bind(m_rendered.m_joined_data.m_color, 1, 4);
+                m_vbos[2].Bind(m_rendered.m_joined_data.m_texture_coordinates, 2, 2);
+                m_vbos[3].Bind(m_rendered.m_joined_data.m_normals, 3);
+                m_vbos[4].Bind(m_rendered.m_texture_index, 4, 1);
 
-            m_vao.Unbind();
+                m_vao.Unbind();
+            }
+            else {
+                m_buffer_needs_rebind = true;
+            }
+        }
+
+        /**
+         * @brief Remove model from heap by id
+         * 
+         * @param id 
+         */
+        void RemoveModel(std::string name, bool bind_to_buffer = true) {
+            m_rendered.PopData(name);
+            
+            if(bind_to_buffer) {
+                m_vao.Bind();
+
+                m_vbos[0].Bind(m_rendered.m_joined_data.m_vertices, 0);
+                m_vbos[1].Bind(m_rendered.m_joined_data.m_color, 1, 4);
+                m_vbos[2].Bind(m_rendered.m_joined_data.m_texture_coordinates, 2, 2);
+                m_vbos[3].Bind(m_rendered.m_joined_data.m_normals, 3);
+                m_vbos[4].Bind(m_rendered.m_texture_index, 4, 1);
+
+                m_vao.Unbind();
+            }
+            else {
+                m_buffer_needs_rebind = true;
+            }
+        }
+
+        /**
+         * @brief Get the Id From Name
+         * 
+         * @return uint32_t 
+         */
+        uint32_t GetIdFromName(std::string name) {
+            if(m_rendered.m_original_data.size() > 1) {
+                return Search(m_rendered.m_model_name, name);
+            }
+            else {
+                return 0;
+            }
         }
 
         /**
@@ -540,6 +631,27 @@ namespace qe
         }
 
         /**
+         * @brief Binds data to buffers passed to GPU, useful if you loading big models on separated thread
+         * 
+         * @param force_rebind 
+         */
+        void BindToBuffers(bool force_rebind = false) {
+            if(m_buffer_needs_rebind || force_rebind) {
+                m_buffer_needs_rebind = false;
+
+                m_vao.Bind();
+
+                m_vbos[0].Bind(m_rendered.m_joined_data.m_vertices, 0);
+                m_vbos[1].Bind(m_rendered.m_joined_data.m_color, 1, 4);
+                m_vbos[2].Bind(m_rendered.m_joined_data.m_texture_coordinates, 2, 2);
+                m_vbos[3].Bind(m_rendered.m_joined_data.m_normals, 3);
+                m_vbos[4].Bind(m_rendered.m_texture_index, 4, 1);
+
+                m_vao.Unbind();
+            }
+        }
+
+        /**
          * @brief Set the Rendered object
          * 
          * @param data 
@@ -547,6 +659,13 @@ namespace qe
         void SetRendered(Rendered data) {
             m_rendered = data;
         }
+
+        /**
+         * @brief Get the Rendered data pointer
+         * 
+         * @return Rendered* 
+         */
+        Rendered *GetRenderedPtr() { return &m_rendered; }
 
         /**
          * @brief Get the Model Position object
@@ -584,6 +703,13 @@ namespace qe
          */
         void __debug_public_info() {
             printf("Render: %d, Triangles: %d, Indices: %d\n", m_render, m_triangles, m_with_indices);
+        }
+
+        void __debug_colors() {
+            for(int i = 0; i < m_rendered.m_joined_data.m_color.size() / 4; i++) {
+                printf("Iter: %d          %f %f %f %f\n", i, m_rendered.m_joined_data.m_color[i * 4 + 0], m_rendered.m_joined_data.m_color[i * 4 + 1], m_rendered.m_joined_data.m_color[i * 4 + 2], m_rendered.m_joined_data.m_color[i * 4 + 3]);
+                fflush(stdout);
+            }
         }
 
         /**

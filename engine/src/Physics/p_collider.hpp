@@ -4,6 +4,8 @@
 
 #include <glm/glm.hpp>
 #include "../Core/c_algorithms.hpp"
+#include <map>
+#include <unordered_map>
 
 namespace qe {
     class Collider {
@@ -119,12 +121,50 @@ namespace qe {
             return false;
         }
 
+        bool CheckLine2DToLine2D(Collider* collider) {
+            math::Vector<float> collider_high_y = math::Vector<float>::highest_on_y({collider->m_position, collider->m_size}, true);
+            math::Vector<float> collider_low_y = math::Vector<float>::lowest_on_y({collider->m_position, collider->m_size}, true);
+
+            math::Vector<float> collider_high_x = math::Vector<float>::highest_on_x({collider->m_position, collider->m_size}, true);
+            math::Vector<float> collider_low_x = math::Vector<float>::lowest_on_x({collider->m_position, collider->m_size}, true);
+
+            math::Vector<float> this_high_y = math::Vector<float>::highest_on_y({m_position, m_size}, true);
+            math::Vector<float> this_low_y = math::Vector<float>::lowest_on_y({m_position, m_size}, true);
+
+            math::Vector<float> this_high_x = math::Vector<float>::highest_on_x({ m_position, m_size}, true);
+            math::Vector<float> this_low_x = math::Vector<float>::lowest_on_x({m_position, m_size}, true);
+
+            Vector<float> intersection_point_2d = Vector<float>(((collider->m_position.x * collider->m_size.y - collider->m_position.y * collider->m_size.x) * (m_position.x - m_size.x) - (collider->m_position.x - collider->m_size.x) * (m_position.x * m_size.y - m_position.y * m_size.x)) / ((collider->m_position.x - collider->m_size.x) * (m_position.y - m_size.y) - (collider->m_position.y - collider->m_size.y) * (m_position.x - m_size.x)),
+                                                                ((collider->m_position.x * collider->m_size.y - collider->m_position.y * collider->m_size.x) * (m_position.y - m_size.y) - (collider->m_position.y - collider->m_size.y) * (m_position.x * m_size.y - m_position.y * m_size.x)) / ((collider->m_position.x - collider->m_size.x) * (m_position.y - m_size.y) - (collider->m_position.y - collider->m_size.y) * (m_position.x - m_size.x)));
+        
+            if(intersection_point_2d.y <= collider_high_y.y && intersection_point_2d.y >= collider_low_y.y && intersection_point_2d.x >= collider_low_x.x && intersection_point_2d.x <= collider_high_x.x &&
+                intersection_point_2d.y <= this_high_y.y && intersection_point_2d.y >= this_low_y.y && intersection_point_2d.x >= this_low_x.x && intersection_point_2d.x <= this_high_x.x) {
+                return true;
+            }
+
+            return false;
+        }
+
         bool CheckPointToPlane(Collider* collider, float error_margin = 0.1f, bool this_object_as_point = true, math::Vector<float> direction = math::Vector<float>(0.0f, -1.0f, 0.0f)) {
             if(this_object_as_point) {
-                
+                Vector<float> low_y = Vector<float>::lowest_on_y({collider->m_position, collider->m_size, collider->m_third_point}, true);
+
+                Vector<float> middle = (collider->m_position + collider->m_size + collider->m_third_point) / 3.0f;
+
+                Vector<float> distance_axial = Vector<float>(abs(middle.x - m_position.x), abs(middle.y), abs(middle.z - m_position.z));
+                // yz, xz, xy
+                Vector<float> lengths = Vector<float>(pow(distance_axial.y, 2) + pow(distance_axial.z, 2), pow(distance_axial.x, 2) + pow(distance_axial.z, 2), pow(distance_axial.x, 2) + pow(distance_axial.y, 2));
+
+
+
+                Vector<float> w;
+
+                Vector<float> hit_point = low_y + distance_axial;
+
+
             }
             else {
-
+                Vector<float> normal = math::find_plane_normal(m_position, m_size, m_third_point);
             }
 
             return false;
@@ -182,8 +222,76 @@ namespace qe {
 
             return false;
         }*/
+    };
 
-        // TODO: Point to plane collisions
+    class ColliderHandler  {
+    private:
+        std::unordered_map<std::string, Collider> m_collider_map;
+
+    public:
+        ColliderHandler() {}
+
+        /**
+         * @brief Add collider to map
+         * 
+         * @param name 
+         */
+        void AddCollider(std::string name = "__Collider__") {
+            if(name == "__Collider__") {
+                name += std::to_string(m_collider_map.size());
+            }
+
+            m_collider_map.insert(std::make_pair(name, Collider()));
+        }
+
+        /**
+         * @brief Erase Collider from map
+         * 
+         * @param name 
+         */
+        void EraseCollider(std::string name) {
+            m_collider_map.erase(name);
+        }
+
+        /**
+         * @brief Get the Collider Ptr object
+         * 
+         * @param name 
+         * @return Collider* 
+         */
+        Collider* GetColliderPtr(std::string name) { return &m_collider_map[name]; }
+
+        /**
+         * @brief Checks collidion all collidion with collider pulled by name and return collider names that it collides with
+         * 
+         * @param name 
+         * @return std::vector<std::string> 
+         */
+        std::vector<std::string> CheckWithEverythingLine2DToLine2D(std::string name) {
+            std::vector<std::string> collider_names;
+            
+            for(auto collider : m_collider_map) {
+                if(collider.first != name) {
+                    if(m_collider_map[name].CheckLine2DToLine2D(&collider.second)) {
+                        collider_names.push_back(collider.first);
+                    }
+                }
+            }
+
+            return collider_names;
+        }
+
+        /**
+         * @brief Get the Collider Map Ptr object
+         * 
+         * @return std::unordered_map<std::string, Collider>* 
+         */
+        std::unordered_map<std::string, Collider>* GetColliderMapPtr() { return &m_collider_map; }
+
+        std::unordered_map<std::string, Collider>::iterator begin() { return m_collider_map.begin(); }
+        std::unordered_map<std::string, Collider>::iterator end() { return m_collider_map.end(); }
+        std::unordered_map<std::string, Collider>::const_iterator cbegin() { return m_collider_map.cbegin(); }
+        std::unordered_map<std::string, Collider>::const_iterator cend() { return m_collider_map.cend(); }
     };
 }
 

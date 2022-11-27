@@ -3,9 +3,17 @@
 #define __P_RIGIDBODY_
 
 #include <glm/glm.hpp>
+#include "../Core/c_algorithms.hpp"
 
 namespace qe {
     float g_gravity = 10.0f;
+
+    class Rigidbody2D {
+    private:
+
+    public:
+
+    };
 
     class Rigidbody {
     private:

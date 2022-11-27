@@ -75,6 +75,7 @@ namespace qe
         std::vector<uint32_t> m_data_end;
         std::vector<float> m_texture_index;
         QE_RenderedData m_joined_data;
+        std::vector<std::string> m_model_name;
 
         /**
          * @brief Rejoin all data together to get one big object
@@ -117,7 +118,7 @@ namespace qe
          * 
          * @param data 
          */
-        void PushData(QE_RenderedData data) {
+        void PushData(QE_RenderedData data, std::string model_name = "__Model__") {
             m_original_data.push_back(data);
             m_data.push_back(data);
             m_axis_helper.push_back(QE_AxisHelper());
@@ -129,15 +130,20 @@ namespace qe
             std::copy(data.m_indices.begin(), data.m_indices.end(), std::back_inserter(m_joined_data.m_indices));
 
             if (m_data_end.size() == 0) {
-                m_data_end.push_back(data.m_vertices.size() / 3);
+                m_data_end.push_back((data.m_vertices.size() / 3));
             }
             else {
-                m_data_end.push_back(data.m_vertices.size() / 3 + m_data_end[m_data_end.size() - 1]);
+                m_data_end.push_back((data.m_vertices.size() / 3) + m_data_end[m_data_end.size() - 1]);
             }
 
             m_data_sizes.push_back(data.m_vertices.size() / 3);
 
             m_texture_index.resize(m_data_end[m_data_end.size() - 1]);
+
+            m_model_name.push_back(model_name + (model_name != "__Model__" ? "" : std::to_string(m_model_name.size())));
+
+            //printf("Size %d End %d\n", m_data_sizes[m_data_sizes.size() - 1], m_data_end[m_data_end.size() - 1]);
+            //fflush(stdout);
         }
 
         /**
@@ -149,6 +155,7 @@ namespace qe
             m_data.erase(m_data.begin() + id);
             m_original_data.erase(m_original_data.begin() + id);
             m_axis_helper.erase(m_axis_helper.begin() + id);
+            m_model_name.erase(m_model_name.begin() + id);
             
             JoinData();
         }
@@ -164,7 +171,19 @@ namespace qe
             m_data.erase(m_data.begin() + index);
             m_original_data.erase(m_original_data.begin() + index);
             m_axis_helper.erase(m_axis_helper.begin() + index);
+            m_model_name.erase(m_model_name.begin() + index);
             
+            JoinData();
+        }
+
+        void PopData(std::string name) {
+            uint32_t index = Search(m_model_name, name);
+
+            m_data.erase(m_data.begin() + index);
+            m_original_data.erase(m_original_data.begin() + index);
+            m_axis_helper.erase(m_axis_helper.begin() + index);
+            m_model_name.erase(m_model_name.begin() + index);
+
             JoinData();
         }
     };

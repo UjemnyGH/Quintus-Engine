@@ -22,7 +22,6 @@ void Game::Start() {
     square.AddShader(qe::LoadShader(qe::vertex_shader, qe::ShaderType::vertex));
     square.AddShader(qe::LoadShader(qe::color_fragment_shader, qe::ShaderType::fragment));
     square.m_triangles = false;
-    square.m_with_indices = false;
 
     qe::RenderedData ddata = {
         {
@@ -47,23 +46,47 @@ void Game::Start() {
         }
     };
 
-    square.AddModel(qe::square);
-    square.SetScaleByID(0, 0.1f, 0.1f, 0.1f);
-    square.AddModel(ddata);
+    qe::RenderedData dddata = {
+        {
+            0.0f, 0.5f, 0.0f,
+            -0.3f, -0.4f, 0.0f,
+        },
+        {
+            1.0f, 1.0f, 1.0f, 1.0f,
+            1.0f, 1.0f, 1.0f, 1.0f,
+        },
+        {
+            1.0f, 1.0f,
+            1.0f, 1.0f,
+        },
+        {
+            0.0f, 0.0f, 0.0f,
+            0.0f, 0.0f, 0.0f,
+        },
+        {
+            0, 1
+        }
+    };
+
+    square.AddModel(dddata, "Line1");
+    square.AddModel(ddata, "Line2");
+
+    square.ForceRejoin();
 }
 
 void Game::Update() {
     // Code here
     qe::g_view = glm::lookAt(camera - glm::vec3(0.0f, 0.0f, 1.0f), camera, glm::vec3(0.0f, 1.0f, 0.0f));
-    square.SetPositionByID(0, pos.x, pos.y, 0.0f);
+    square.SetPositionByID(square.GetIdFromName("Line1"), pos.x, pos.y, 0.0f);
 }
 
 void Game::LateUpdate() {
-    collider[0].m_position = qe::math::Vector<float>(pos.x, pos.y, 0.0f);
+    collider[0].m_position = qe::math::Vector<float>(pos.x, pos.y + 0.5f, 0.0f);
+    collider[0].m_size = qe::math::Vector<float>(pos.x - 0.3f, pos.y - 0.4f, 0.0f);
     collider[1].m_position = qe::math::Vector<float>(0.5f, 0.6f, 0.0f);
     collider[1].m_size = qe::math::Vector<float>(-0.5f, -0.4f, 0.0f);
     
-    if(collider[0].CheckPointToLine2D(&collider[1])) {
+    if(collider[0].CheckLine2DToLine2D(&collider[1])) {
         square.SetColorByID(0, 1.0f, 0.0f, 0.0f, 1.0f);
         square.SetColorByID(1, 1.0f, 0.0f, 0.0f, 1.0f);
     }
