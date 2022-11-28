@@ -193,7 +193,7 @@ namespace qe
             default:
             case ModelType::OBJ:
                 data = LoadOBJ(path);
-                //m_data.clear();
+                m_data.clear();
                 m_data.resize(data.size());
                 
                 for(int i = 0; i < data.size(); i++) {

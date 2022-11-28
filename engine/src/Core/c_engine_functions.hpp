@@ -2,8 +2,7 @@
 #ifndef __C_ENGINE_FUNCTIONS_
 #define __C_ENGINE_FUNCTIONS_
 
-#define GLEW_STATIC
-#include <GL/glew.h>
+#include "../../vendor/glad/glad.h"
 #include <iostream>
 #include <fstream>
 

@@ -10,7 +10,7 @@ Here you have my public game engines on github (obviusly unfinished):
 ----------
 ### Libraries used in project:
 1. GLFW
-2. GLEW
+2. GLAD
 3. GLM
 4. stb_image
 

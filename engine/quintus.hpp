@@ -8,8 +8,7 @@
 #include "src/Renderer/r_model_loader.hpp"
 #include "src/Core/c_hard_coded_stuff.hpp"
 #include "src/Core/c_base64.hpp"
-#include "src/Physics/p_collider.hpp"
-#include "src/Physics/p_rigidbody.hpp"
+#include "src/Physics/p_physics.hpp"
 
 // Always on end!!!
 #include "src/Core/c_entry_point.hpp"

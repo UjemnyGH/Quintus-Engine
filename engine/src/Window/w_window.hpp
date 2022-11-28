@@ -2,8 +2,7 @@
 #ifndef __W_WINDOW_
 #define __W_WINDOW_
 
-#define GLEW_STATIC
-#include <GL/glew.h>
+#include "../../vendor/glad/glad.h"
 #include <GLFW/glfw3.h>
 #include "../Core/c_layers.hpp"
 #include "../Core/c_engine_functions.hpp"
@@ -186,6 +185,10 @@ namespace qe {
 
         void fixedUpdateCallback() {
             while(!m_window_closed) {
+                if(m_window_closed) {
+                    break;
+                }
+
                 FixedUpdate();
 
                 std::this_thread::sleep_for(std::chrono::nanoseconds(1000000000 / m_fixed_update_per_second));
@@ -263,14 +266,8 @@ namespace qe {
 
             glfwMakeContextCurrent(m_window);
 
-            glewExperimental = true;
-
-            if(glewInit() != GLEW_OK) {
-                qe_term("GLEW cannot be initialized!");
-            }
-
-            if(!GLEW_VERSION_4_3) {
-                qe_term("Your GLEW version doesn`t support that OpenGL version!");
+            if(!gladLoadGLLoader((GLADloadproc)glfwGetProcAddress)) {
+                qe_term("No GLAD!");
             }
 
             glEnable(GL_DEPTH_TEST);
@@ -396,6 +393,13 @@ namespace qe {
          * @param fullscreen 
          */
         void setFullscreen(bool fullscreen) { glfwSetWindowMonitor(m_window, fullscreen == true ? glfwGetPrimaryMonitor() : nullptr, 0, 0, m_width, m_height, GLFW_DONT_CARE); } 
+
+        /**
+         * @brief Get the Fixed Update Time Interval In Seconds
+         * 
+         * @return float 
+         */
+        float getFixedUpdateTimeIntervalInSec() { return 1.0f / (float)m_fixed_update_per_second; }
     };
 
     typedef QE_Window Window;

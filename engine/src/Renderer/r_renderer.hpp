@@ -698,6 +698,13 @@ namespace qe
         }
 
         /**
+         * @brief Get the Model Amount object
+         * 
+         * @return uint32_t 
+         */
+        uint32_t GetModelAmount() { return m_rendered.m_data_sizes.size(); }
+
+        /**
          * @brief Debug info on public bool variables (m_render, m_with_indices, m_triangles)
          * 
          */

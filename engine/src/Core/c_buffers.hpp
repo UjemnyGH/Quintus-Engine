@@ -2,8 +2,7 @@
 #ifndef __C_BUFFERS_
 #define __C_BUFFERS_
 
-#define GLEW_STATIC
-#include <GL/glew.h>
+#include "../../vendor/glad/glad.h"
 #include <cstdint>
 #include <vector>
 #include <fstream>

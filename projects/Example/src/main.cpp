@@ -12,9 +12,9 @@ public:
     void input();
 };
 
-qe::Renderer test1;
 qe::Renderer skybox;
-qe::Renderer sphere;
+qe::Renderer bullets;
+
 qe::math::Vector<float> playerPos = qe::math::Vector<float>(0.0f);
 qe::math::Vector<float> playerDir = qe::math::Vector<float>(0.0f, 0.0f, 1.0f);
 qe::math::Vector<float> playerVelocity = qe::math::Vector<float>(0.0f);
@@ -26,34 +26,19 @@ float yaw = 0.0f;
 float pitch = 0.0f;
 bool move_press = false;
 bool strafe_press = false;
+bool camera = false;
 const float playerSpeed = 10.0f;
 
-
-qe::RenderedData triangle = {
-    {
-        -10.0f, 5.0f, 6.0f,
-        10.0f, -5.0f, 6.0f,
-        10.0f, -5.0f, -6.0f
-    },
-    {
-        1.0f, 1.0f, 1.0f, 1.0f,
-        1.0f, 1.0f, 1.0f, 1.0f,
-        1.0f, 1.0f, 1.0f, 1.0f
-    },
-    {
-        0.0f
-    },
-    {
-        1.0f
-    },
-    {
-        0
-    }
-};
 
 void mouse(GLFWwindow* window, double xpos, double ypos) {
     if(glfwGetMouseButton(window, GLFW_MOUSE_BUTTON_1) == GLFW_PRESS) {
         glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
+
+        if(!camera) {
+            glfwSetCursorPos(window, (double)lastX, (double)lastY);
+
+            camera = true;
+        }
 
         float xoffset = xpos - lastX;
 		float yoffset = lastY - ypos;
@@ -78,6 +63,7 @@ void mouse(GLFWwindow* window, double xpos, double ypos) {
     }
     else {
         glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_NORMAL);
+        camera = false;
     }
 }
 
@@ -123,8 +109,6 @@ void Game::input() {
     playerPos.x += playerDir.x * playerVelocity.z * Game::time.GetDeltaTime() * playerSpeed;
 
     playerPos += playerDir.normalize().cross(qe::math::Vector<float>(0.0f, 1.0f, 0.0f)).normalize() * (playerVelocity.x * Game::time.GetDeltaTime() * playerSpeed);
-    //playerPos += qe::math::Vector<float>(glm::cross(glm::vec3(playerPos.x, playerPos.y, playerPos.z), glm::vec3(0.0f, 1.0f, 0.0f)).x, glm::cross(glm::vec3(playerPos.x, playerPos.y, playerPos.z), glm::vec3(0.0f, 1.0f, 0.0f)).y, glm::cross(glm::vec3(playerPos.x, playerPos.y, playerPos.z), glm::vec3(0.0f, 1.0f, 0.0f)).z).normalize() * playerVelocity.x;
-
     if(!move_press) {
         playerVelocity.z -= playerVelocity.z > 0.0f ? playerVelocityGain : 0.0f;
         playerVelocity.z += playerVelocity.z < 0.0f ? playerVelocityGain : 0.0f;
@@ -142,58 +126,36 @@ void Game::input() {
             playerVelocity.x = 0.0f;
         }
     }
-
-    //printf("Velocities: %f %f %f\n", playerVelocity.x, playerVelocity.y, playerVelocity.z);
 }
 
 qe::ModelLoader ml;
-qe::ModelLoader ml2;
+qe::RenderedData bullet;
 
-bool models_loaded = false;
-
-void load_models() {
-    sphere.m_render = false;
-    ml2.LoadModelUnindexed("data/models/test.obj", qe::OBJ);
-
-    for(int i = 0; i < 3000; i++) {
-        sphere.AddModel(ml2.GetModelData(), "Sphere" + std::to_string(i + 1), false);
-        sphere.SetPositionByID(sphere.GetIdFromName("Sphere" + std::to_string(i + 1)), (float)i * 4.0f, 0.0f, 0.0f, false);
-    }
-
-    models_loaded = true;
-}
+std::vector<qe::Particle> particles;
 
 void Game::Start() {
     // Code here
 
-    Game::m_far = 3000.0f;
     glfwSetCursorPosCallback(Game::getWindowPtr(), mouse);
 
-    ml.LoadModelUnindexed("data/models/test_cube.obj", qe::ModelType::OBJ);
-
-    Game::m_orthographic = false;
-    qe::g_globalLight = glm::vec3(40.0f, 100.0f, 0.0f);
     Game::setVSync(true);
     Game::UpdatePerspective();
+    Game::m_fixed_update_per_second = 64;
 
-    Game::AddLayer(&test1);
+    Game::AddLayer(&bullets);
+    bullets.AddShader(qe::LoadShader(qe::vertex_shader, qe::vertex));
+    bullets.AddShader(qe::LoadShader(qe::color_fragment_shader, qe::fragment));
+
+    ml.LoadModelUnindexed("data/models/test_cube.obj");
+
+    bullet = ml.GetModelData();
+
+    bullets.AddModel(bullet);
+    bullets.SetScaleByID(0, 0.1f, 0.1f, 0.1f);
+    
+    ml.LoadModelUnindexed("data/models/test_cube.obj", qe::ModelType::OBJ);
+
     Game::AddLayer(&skybox);
-    Game::AddLayer(&sphere);
-
-    sphere.AddShader(qe::LoadShader(qe::vertex_shader, qe::vertex));
-    sphere.AddShader(qe::LoadShader(qe::color_fragment_shader, qe::ShaderType::fragment));
-
-    test1.AddShader(qe::LoadShader(qe::vertex_shader, qe::ShaderType::vertex));
-    test1.AddShader(qe::LoadShader(qe::texture_fragment_shader, qe::ShaderType::fragment));
-    //test1.AddShader(qe::LoadShaderFromPath("data/shaders/light.frag", qe::ShaderType::fragment));
-    for(int i = 0; i < ml.GetModelVectorData().size(); i++) {
-        test1.AddModel(triangle);
-    }
-    test1.AddModel(triangle);
-
-    test1.AddTexture("data/textures/test_skybox2k.png");
-    test1.SetModelTexture(0, 0);
-
     skybox.AddShader(qe::LoadShader(qe::vertex_shader, qe::ShaderType::vertex));
     skybox.AddShader(qe::LoadShader(qe::texture_fragment_shader, qe::ShaderType::fragment));
     for(int i = 0; i < ml.GetModelVectorData().size(); i++) {
@@ -203,54 +165,60 @@ void Game::Start() {
     skybox.SetModelTexture(0, 0);
     skybox.SetScaleByID(0, 1000.0f, 1000.0f, 1000.0f);
 
-    std::thread load_model_multitask(load_models);
-
-    load_model_multitask.detach();
+    particles.resize(1);
 }
 
+bool binding = false;
+
 void Game::FixedUpdate() {
-    
+
+    float delay = Game::getFixedUpdateTimeIntervalInSec();
+
+    for(int i = 0; i < particles.size(); i++) {
+        particles[i].integrate(Game::time.GetDeltaTime());
+
+        bullets.SetPositionByID(i, particles[i].m_position.x, particles[i].m_position.y, particles[i].m_position.z, false);
+    }
+
+    binding = true;
 }
 
 void Game::Update() {
     // Code here
-
-    //printf("Vertices: %d FPS: %f, Max threads: %d\n", ml2.m_vertices_amount_loaded * 3000, 1.0f / Game::time.GetDeltaTime(), std::thread::hardware_concurrency());
-
-    //test1.SetColorByID(test1.GetIdFromName("Terrain"), 0.4f, 0.4f, 0.4f, 1.0f);
-
-    if(models_loaded && !sphere.m_render) {
-        sphere.BindToBuffers();
-        sphere.m_render = true;
-    }
-
-    if(glfwGetKey(Game::getWindowPtr(), GLFW_KEY_R) == GLFW_PRESS) {
-        test1.ClearShaders();
-        test1.AddShader(qe::LoadShader(qe::vertex_shader, qe::ShaderType::vertex));
-        test1.AddShader(qe::LoadShaderFromPath("data/shaders/light.frag", qe::ShaderType::fragment));
-
-        std::cerr << "Reloaded shaders\n";
-    }
-
     qe::g_view = glm::lookAt(glm::vec3(playerPos.x, playerPos.y, playerPos.z), glm::vec3(playerPos.x, playerPos.y, playerPos.z) + glm::vec3(playerDir.x, playerDir.y, playerDir.z), glm::vec3(0.0f, 1.0f, 0.0f));
 
-    test1.SetRotationByID(0, Game::time.GetTime() * 1.0f, Game::time.GetTime() * 1.0f, Game::time.GetTime() * 1.0f);
+    if(binding) {
+        bullets.BindToBuffers();
+        binding = false;
+    }
 
     skybox.SetPosition(playerPos.x, playerPos.y, playerPos.z);
-    test1.SetColorByID(1, 0.0f, 0.0f, 0.0f, 0.0f);
 }
 
-qe::Collider cl;
-qe::Collider cl2;
+bool clicked = false;
 
 void Game::LateUpdate() {
-    cl.m_position = playerPos;
 
-    cl2.m_position = qe::math::Vector<float>(triangle.m_vertices[0], triangle.m_vertices[1], triangle.m_vertices[2]);
-    cl2.m_size = qe::math::Vector<float>(triangle.m_vertices[3], triangle.m_vertices[4], triangle.m_vertices[5]);
-    cl2.m_third_point = qe::math::Vector<float>(triangle.m_vertices[6], triangle.m_vertices[7], triangle.m_vertices[8]);
+    if(glfwGetMouseButton(Game::getWindowPtr(), GLFW_MOUSE_BUTTON_2) == GLFW_PRESS && !clicked) {
+        clicked = true;
+        bullets.AddModel(bullet, "__Model__", false);
+        bullets.SetScaleByID(particles.size(), 0.1f, 0.1f, 0.1f, false);
 
-    //printf("Collision: %d\n", cl.CheckPointToPlane(&cl2));
+        particles.resize(particles.size() + 1);
+
+        particles[particles.size() - 1].m_position = playerPos;
+        particles[particles.size() - 1].m_acceleration = qe::Vector<qe::real>(0.0f);
+        particles[particles.size() - 1].m_velocity = qe::Vector<qe::real>(0.0f);
+        particles[particles.size() - 1].addForce(playerDir * 1000.0f);
+
+        if(bullets.GetModelAmount() > 100) {
+            bullets.RemoveModel(0, false);
+            particles.erase(particles.begin());
+        }
+    }
+    else if(glfwGetMouseButton(Game::getWindowPtr(), GLFW_MOUSE_BUTTON_2) == GLFW_RELEASE) {
+        clicked = false;
+    }
 
     input();
 }
