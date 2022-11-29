@@ -14,6 +14,7 @@ public:
 
 qe::Renderer skybox;
 qe::Renderer bullets;
+qe::Renderer gun;
 
 qe::math::Vector<float> playerPos = qe::math::Vector<float>(0.0f);
 qe::math::Vector<float> playerDir = qe::math::Vector<float>(0.0f, 0.0f, 1.0f);
@@ -138,9 +139,25 @@ void Game::Start() {
 
     glfwSetCursorPosCallback(Game::getWindowPtr(), mouse);
 
+    ml.LoadModelUnindexed("data/models/test_cube.obj");
+
     Game::setVSync(true);
     Game::UpdatePerspective();
     Game::m_fixed_update_per_second = 64;
+
+    Game::AddLayer(&gun);
+    gun.AddShader(qe::LoadShader(qe::vertex_shader, qe::vertex));
+    gun.AddShader(qe::LoadShader(qe::texture_fragment_shader, qe::fragment));
+
+    ml.m_debug = true;
+
+    ml.LoadModelUnindexed("data/models/wre-53.obj");
+
+    gun.AddModel(ml.GetModelData(), "Wre-53");
+    gun.AddTexture("data/textures/wre-53.png");
+
+    gun.SetPositionByID(0, 1.9f, -1.9f, 1.9f);
+    gun.SetScale(0.1f, 0.1f, 0.1f);
 
     Game::AddLayer(&bullets);
     bullets.AddShader(qe::LoadShader(qe::vertex_shader, qe::vertex));
@@ -170,14 +187,16 @@ void Game::Start() {
 
 bool binding = false;
 
+void SetPos(uint32_t i , qe::Particle particle) {
+    bullets.SetPositionByID(i, particle.m_position.x, particle.m_position.y, particle.m_position.z, false);
+}
+
 void Game::FixedUpdate() {
 
     float delay = Game::getFixedUpdateTimeIntervalInSec();
 
     for(int i = 0; i < particles.size(); i++) {
         particles[i].integrate(Game::time.GetDeltaTime());
-
-        bullets.SetPositionByID(i, particles[i].m_position.x, particles[i].m_position.y, particles[i].m_position.z, false);
     }
 
     binding = true;
@@ -187,19 +206,25 @@ void Game::Update() {
     // Code here
     qe::g_view = glm::lookAt(glm::vec3(playerPos.x, playerPos.y, playerPos.z), glm::vec3(playerPos.x, playerPos.y, playerPos.z) + glm::vec3(playerDir.x, playerDir.y, playerDir.z), glm::vec3(0.0f, 1.0f, 0.0f));
 
+    for(int i = 0; i < bullets.GetModelAmount(); i++) {
+        std::future<void> set_pos_async = std::async(SetPos, i, particles[i]);
+    }
+
     if(binding) {
         bullets.BindToBuffers();
         binding = false;
     }
 
     skybox.SetPosition(playerPos.x, playerPos.y, playerPos.z);
+    gun.SetPosition(playerPos.x, playerPos.y, playerPos.z);
+    gun.SetRotation(qe::math::to_degrees(playerDir.x), qe::math::to_degrees(playerDir.y), qe::math::to_degrees(playerDir.z));
 }
 
 bool clicked = false;
 
 void Game::LateUpdate() {
 
-    if(glfwGetMouseButton(Game::getWindowPtr(), GLFW_MOUSE_BUTTON_2) == GLFW_PRESS && !clicked) {
+    if(glfwGetMouseButton(Game::getWindowPtr(), GLFW_MOUSE_BUTTON_2) == GLFW_PRESS/* && !clicked*/) {
         clicked = true;
         bullets.AddModel(bullet, "__Model__", false);
         bullets.SetScaleByID(particles.size(), 0.1f, 0.1f, 0.1f, false);
@@ -211,7 +236,7 @@ void Game::LateUpdate() {
         particles[particles.size() - 1].m_velocity = qe::Vector<qe::real>(0.0f);
         particles[particles.size() - 1].addForce(playerDir * 1000.0f);
 
-        if(bullets.GetModelAmount() > 100) {
+        if(bullets.GetModelAmount() > 200) {
             bullets.RemoveModel(0, false);
             particles.erase(particles.begin());
         }
