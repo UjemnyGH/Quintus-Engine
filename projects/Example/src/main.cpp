@@ -146,18 +146,18 @@ void Game::Start() {
     Game::m_fixed_update_per_second = 64;
 
     Game::AddLayer(&gun);
+    gun.m_render_with_g_projection = true;
+    gun.m_render_with_g_view = false;
     gun.AddShader(qe::LoadShader(qe::vertex_shader, qe::vertex));
     gun.AddShader(qe::LoadShader(qe::texture_fragment_shader, qe::fragment));
-
-    ml.m_debug = true;
 
     ml.LoadModelUnindexed("data/models/wre-53.obj");
 
     gun.AddModel(ml.GetModelData(), "Wre-53");
     gun.AddTexture("data/textures/wre-53.png");
 
-    gun.SetPositionByID(0, 1.9f, -1.9f, 1.9f);
-    gun.SetScale(0.1f, 0.1f, 0.1f);
+    gun.SetPosition(0.5f, -0.5f, -1.8f);
+    //gun.SetRotation(qe::math::to_radians(10.0f), qe::math::to_radians(10.0f), qe::math::to_radians(0.0f));
 
     Game::AddLayer(&bullets);
     bullets.AddShader(qe::LoadShader(qe::vertex_shader, qe::vertex));
@@ -168,7 +168,7 @@ void Game::Start() {
     bullet = ml.GetModelData();
 
     bullets.AddModel(bullet);
-    bullets.SetScaleByID(0, 0.1f, 0.1f, 0.1f);
+    bullets.SetScaleByID(0, 0.0f, 0.0f, 0.0f);
     
     ml.LoadModelUnindexed("data/models/test_cube.obj", qe::ModelType::OBJ);
 
@@ -216,8 +216,6 @@ void Game::Update() {
     }
 
     skybox.SetPosition(playerPos.x, playerPos.y, playerPos.z);
-    gun.SetPosition(playerPos.x, playerPos.y, playerPos.z);
-    gun.SetRotation(qe::math::to_degrees(playerDir.x), qe::math::to_degrees(playerDir.y), qe::math::to_degrees(playerDir.z));
 }
 
 bool clicked = false;
@@ -227,11 +225,11 @@ void Game::LateUpdate() {
     if(glfwGetMouseButton(Game::getWindowPtr(), GLFW_MOUSE_BUTTON_2) == GLFW_PRESS/* && !clicked*/) {
         clicked = true;
         bullets.AddModel(bullet, "__Model__", false);
-        bullets.SetScaleByID(particles.size(), 0.1f, 0.1f, 0.1f, false);
+        bullets.SetScaleByID(particles.size(), 0.01f, 0.01f, 0.01f, false);
 
         particles.resize(particles.size() + 1);
 
-        particles[particles.size() - 1].m_position = playerPos;
+        particles[particles.size() - 1].m_position = playerPos + (playerDir / 3.0f);
         particles[particles.size() - 1].m_acceleration = qe::Vector<qe::real>(0.0f);
         particles[particles.size() - 1].m_velocity = qe::Vector<qe::real>(0.0f);
         particles[particles.size() - 1].addForce(playerDir * 1000.0f);

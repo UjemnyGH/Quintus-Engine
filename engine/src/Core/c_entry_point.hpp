@@ -4,6 +4,8 @@
 
 #define STB_IMAGE_IMPLEMENTATION
 #include "../../vendor/stb/stb_image.h"
+#define STB_TRUETYPE_IMPLEMENTATION
+#include "../../vendor/stb/stb_truetype.h"
 #include "../Window/w_window.hpp"
 float qe::QE_Window::m_left = -2.0f;
 float qe::QE_Window::m_right = 2.0f;

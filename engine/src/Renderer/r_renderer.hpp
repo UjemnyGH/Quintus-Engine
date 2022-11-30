@@ -42,6 +42,8 @@ namespace qe
         bool m_triangles = true;
         bool m_renderer_created = false;
         bool m_render_pixels = false;
+        bool m_render_with_g_projection = true;
+        bool m_render_with_g_view = true;
 
         QE_Renderer() { m_auto_start = true; m_layer_debug_name = "Renderer"; }
 
@@ -213,9 +215,21 @@ namespace qe
                 m_textures[30].Bind(30);
                 m_textures[31].Bind(31);
 
-                glUniformMatrix4fv(glGetUniformLocation(m_sh.m_id, "projection"), 1, GL_FALSE, glm::value_ptr(g_projection));
+                if(m_render_with_g_projection) {
+                    glUniformMatrix4fv(glGetUniformLocation(m_sh.m_id, "projection"), 1, GL_FALSE, glm::value_ptr(g_projection));
+                }
+                else {
+                    glUniformMatrix4fv(glGetUniformLocation(m_sh.m_id, "projection"), 1, GL_FALSE, glm::value_ptr(glm::mat4(1.0)));
+                }
+
+                if(m_render_with_g_view) {
+                    glUniformMatrix4fv(glGetUniformLocation(m_sh.m_id, "view"), 1, GL_FALSE, glm::value_ptr(g_view));
+                }
+                else {
+                    glUniformMatrix4fv(glGetUniformLocation(m_sh.m_id, "view"), 1, GL_FALSE, glm::value_ptr(glm::mat4(1.0)));
+                }
+
                 glUniformMatrix4fv(glGetUniformLocation(m_sh.m_id, "model"), 1, GL_FALSE, glm::value_ptr(m_model));
-                glUniformMatrix4fv(glGetUniformLocation(m_sh.m_id, "view"), 1, GL_FALSE, glm::value_ptr(g_view));
                 glUniform3f(glGetUniformLocation(m_sh.m_id, "globalLight"), g_globalLight.x, g_globalLight.y, g_globalLight.z);
 
                 if(!m_with_indices & m_triangles) {
@@ -249,9 +263,9 @@ namespace qe
             m_renderer_axis_helper.position[2] = z;
 
             m_model = glm::translate(glm::mat4(1.0f), glm::vec3(m_renderer_axis_helper.position[0], m_renderer_axis_helper.position[1], m_renderer_axis_helper.position[2]));
-            m_model = glm::rotate(m_model, qe::math::to_radians(m_renderer_axis_helper.rotation[0]), glm::vec3(1.0f, 0.0f, 0.0f));
-            m_model = glm::rotate(m_model, qe::math::to_radians(m_renderer_axis_helper.rotation[1]), glm::vec3(0.0f, 1.0f, 0.0f));
-            m_model = glm::rotate(m_model, qe::math::to_radians(m_renderer_axis_helper.rotation[2]), glm::vec3(0.0f, 0.0f, 1.0f));
+            m_model = glm::rotate(m_model, m_renderer_axis_helper.rotation[0], glm::vec3(1.0f, 0.0f, 0.0f));
+            m_model = glm::rotate(m_model, m_renderer_axis_helper.rotation[1], glm::vec3(0.0f, 1.0f, 0.0f));
+            m_model = glm::rotate(m_model, m_renderer_axis_helper.rotation[2], glm::vec3(0.0f, 0.0f, 1.0f));
             m_model = glm::scale(m_model, glm::vec3(m_renderer_axis_helper.scale[0], m_renderer_axis_helper.scale[1], m_renderer_axis_helper.scale[2]));
         }
 
@@ -268,9 +282,9 @@ namespace qe
             m_renderer_axis_helper.scale[2] = z;
 
             m_model = glm::translate(glm::mat4(1.0f), glm::vec3(m_renderer_axis_helper.position[0], m_renderer_axis_helper.position[1], m_renderer_axis_helper.position[2]));
-            m_model = glm::rotate(m_model, qe::math::to_radians(m_renderer_axis_helper.rotation[0]), glm::vec3(1.0f, 0.0f, 0.0f));
-            m_model = glm::rotate(m_model, qe::math::to_radians(m_renderer_axis_helper.rotation[1]), glm::vec3(0.0f, 1.0f, 0.0f));
-            m_model = glm::rotate(m_model, qe::math::to_radians(m_renderer_axis_helper.rotation[2]), glm::vec3(0.0f, 0.0f, 1.0f));
+            m_model = glm::rotate(m_model, m_renderer_axis_helper.rotation[0], glm::vec3(1.0f, 0.0f, 0.0f));
+            m_model = glm::rotate(m_model, m_renderer_axis_helper.rotation[1], glm::vec3(0.0f, 1.0f, 0.0f));
+            m_model = glm::rotate(m_model, m_renderer_axis_helper.rotation[2], glm::vec3(0.0f, 0.0f, 1.0f));
             m_model = glm::scale(m_model, glm::vec3(m_renderer_axis_helper.scale[0], m_renderer_axis_helper.scale[1], m_renderer_axis_helper.scale[2]));
         }
 
@@ -287,9 +301,9 @@ namespace qe
             m_renderer_axis_helper.rotation[2] = z;
 
             m_model = glm::translate(glm::mat4(1.0f), glm::vec3(m_renderer_axis_helper.position[0], m_renderer_axis_helper.position[1], m_renderer_axis_helper.position[2]));
-            m_model = glm::rotate(m_model, qe::math::to_radians(m_renderer_axis_helper.rotation[0]), glm::vec3(1.0f, 0.0f, 0.0f));
-            m_model = glm::rotate(m_model, qe::math::to_radians(m_renderer_axis_helper.rotation[1]), glm::vec3(0.0f, 1.0f, 0.0f));
-            m_model = glm::rotate(m_model, qe::math::to_radians(m_renderer_axis_helper.rotation[2]), glm::vec3(0.0f, 0.0f, 1.0f));
+            m_model = glm::rotate(m_model, m_renderer_axis_helper.rotation[0], glm::vec3(1.0f, 0.0f, 0.0f));
+            m_model = glm::rotate(m_model, m_renderer_axis_helper.rotation[1], glm::vec3(0.0f, 1.0f, 0.0f));
+            m_model = glm::rotate(m_model, m_renderer_axis_helper.rotation[2], glm::vec3(0.0f, 0.0f, 1.0f));
             m_model = glm::scale(m_model, glm::vec3(m_renderer_axis_helper.scale[0], m_renderer_axis_helper.scale[1], m_renderer_axis_helper.scale[2]));
         }
 

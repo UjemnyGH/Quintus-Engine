@@ -9,6 +9,7 @@
 #include "src/Core/c_hard_coded_stuff.hpp"
 #include "src/Core/c_base64.hpp"
 #include "src/Physics/p_physics.hpp"
+#include "src/UI/ui_ui.hpp"
 
 // Always on end!!!
 #include "src/Core/c_entry_point.hpp"

@@ -13,6 +13,7 @@ Here you have my public game engines on github (obviusly unfinished):
 2. GLAD
 3. GLM
 4. stb_image
+5. stb_truetype
 
 ----------
 ### To make new project

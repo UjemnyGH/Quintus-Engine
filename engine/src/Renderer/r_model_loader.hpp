@@ -88,6 +88,7 @@ namespace qe
                 }
                 else if(line.find("f ") == 0) {
                     bool doubleSlash = false;
+                    uint32_t slash_amount = 0;
 
                     for(int i = 1; i < line.size(); i++) {
                         if(line[i - 1] == '/' && line[i] == '/') {
@@ -95,11 +96,15 @@ namespace qe
 
                             line[i - 1] = ' ';
                             line[i] = ' ';
+
+                            slash_amount++;
                         }
                         else if(line[i - 1] == '/' && line[i] != '/') {
                             doubleSlash = false;
 
                             line[i - 1] = ' ';
+
+                            slash_amount++;
                         }
                     }
 
@@ -110,66 +115,111 @@ namespace qe
                     std::stringstream ss(line.c_str() + 2);
 
                     uint32_t iv[4], it[4], in[4];
-                    if(doubleSlash) {
-                        ss >> iv[0] >> in[0] >> iv[1] >> in[1] >> iv[2] >> in[2] >> iv[3] >> in[3];
-                    
-                        for(int i = 0; i < 3; i++) {
-                            data[current_pusher - 1].m_vertices.push_back(helper.m_vertices[(iv[i] - 1) * 3]);
-                            data[current_pusher - 1].m_vertices.push_back(helper.m_vertices[(iv[i] - 1) * 3 + 1]);
-                            data[current_pusher - 1].m_vertices.push_back(helper.m_vertices[(iv[i] - 1) * 3 + 2]);
+                    if(slash_amount >= 7) {
+                        if(doubleSlash) {
+                            ss >> iv[0] >> in[0] >> iv[1] >> in[1] >> iv[2] >> in[2] >> iv[3] >> in[3];
+                        
+                            for(int i = 0; i < 3; i++) {
+                                data[current_pusher - 1].m_vertices.push_back(helper.m_vertices[(iv[i] - 1) * 3]);
+                                data[current_pusher - 1].m_vertices.push_back(helper.m_vertices[(iv[i] - 1) * 3 + 1]);
+                                data[current_pusher - 1].m_vertices.push_back(helper.m_vertices[(iv[i] - 1) * 3 + 2]);
 
-                            m_vertices_amount_loaded++;
+                                m_vertices_amount_loaded++;
 
-                            data[current_pusher - 1].m_normals.push_back(helper.m_normals[(in[i] - 1) * 3]);
-                            data[current_pusher - 1].m_normals.push_back(helper.m_normals[(in[i] - 1) * 3 + 1]);
-                            data[current_pusher - 1].m_normals.push_back(helper.m_normals[(in[i] - 1) * 3 + 2]);
+                                data[current_pusher - 1].m_normals.push_back(helper.m_normals[(in[i] - 1) * 3]);
+                                data[current_pusher - 1].m_normals.push_back(helper.m_normals[(in[i] - 1) * 3 + 1]);
+                                data[current_pusher - 1].m_normals.push_back(helper.m_normals[(in[i] - 1) * 3 + 2]);
+                            }
+
+                            for(int i = 1; i < 4; i++) {
+                                data[current_pusher - 1].m_vertices.push_back(helper.m_vertices[(iv[i - (i == 1 ? 1 : 0)] - 1) * 3]);
+                                data[current_pusher - 1].m_vertices.push_back(helper.m_vertices[(iv[i - (i == 1 ? 1 : 0)] - 1) * 3 + 1]);
+                                data[current_pusher - 1].m_vertices.push_back(helper.m_vertices[(iv[i - (i == 1 ? 1 : 0)] - 1) * 3 + 2]);
+
+                                m_vertices_amount_loaded++;
+
+                                data[current_pusher - 1].m_normals.push_back(helper.m_normals[(in[i - (i == 1 ? 1 : 0)] - 1) * 3]);
+                                data[current_pusher - 1].m_normals.push_back(helper.m_normals[(in[i - (i == 1 ? 1 : 0)] - 1) * 3 + 1]);
+                                data[current_pusher - 1].m_normals.push_back(helper.m_normals[(in[i - (i == 1 ? 1 : 0)] - 1) * 3 + 2]);
+
+                            }
                         }
+                        else {
+                            ss >> iv[0] >> it[0] >> in[0] >> iv[1] >> it[1] >> in[1] >> iv[2] >> it[2] >> in[2] >> iv[3] >> it[3] >> in[3];
 
-                        for(int i = 1; i < 4; i++) {
-                            data[current_pusher - 1].m_vertices.push_back(helper.m_vertices[(iv[i - (i == 1 ? 1 : 0)] - 1) * 3]);
-                            data[current_pusher - 1].m_vertices.push_back(helper.m_vertices[(iv[i - (i == 1 ? 1 : 0)] - 1) * 3 + 1]);
-                            data[current_pusher - 1].m_vertices.push_back(helper.m_vertices[(iv[i - (i == 1 ? 1 : 0)] - 1) * 3 + 2]);
+                            if(m_debug) {
+                                printf("Faces check:\t%d %d %d - %d %d %d - %d %d %d - %d %d %d\n", iv[0], it[0], in[0], iv[1], it[1], in[1], iv[2], it[2], in[2], iv[3], it[3], in[3]);
+                            }
 
-                            m_vertices_amount_loaded++;
+                            for(int i = 0; i < 3; i++) {
+                                data[current_pusher - 1].m_vertices.push_back(helper.m_vertices[(iv[i] - 1) * 3]);
+                                data[current_pusher - 1].m_vertices.push_back(helper.m_vertices[(iv[i] - 1) * 3 + 1]);
+                                data[current_pusher - 1].m_vertices.push_back(helper.m_vertices[(iv[i] - 1) * 3 + 2]);
 
-                            data[current_pusher - 1].m_normals.push_back(helper.m_normals[(in[i - (i == 1 ? 1 : 0)] - 1) * 3]);
-                            data[current_pusher - 1].m_normals.push_back(helper.m_normals[(in[i - (i == 1 ? 1 : 0)] - 1) * 3 + 1]);
-                            data[current_pusher - 1].m_normals.push_back(helper.m_normals[(in[i - (i == 1 ? 1 : 0)] - 1) * 3 + 2]);
+                                m_vertices_amount_loaded++;
 
+                                data[current_pusher - 1].m_texture_coordinates.push_back(helper.m_texture_coordinates[(it[i] - 1) * 2]);
+                                data[current_pusher - 1].m_texture_coordinates.push_back(helper.m_texture_coordinates[(it[i] - 1) * 2 + 1]);
+
+                                data[current_pusher - 1].m_normals.push_back(helper.m_normals[(in[i] - 1) * 3]);
+                                data[current_pusher - 1].m_normals.push_back(helper.m_normals[(in[i] - 1) * 3 + 1]);
+                                data[current_pusher - 1].m_normals.push_back(helper.m_normals[(in[i] - 1) * 3 + 2]);
+                            }
+
+                            for(int i = 1; i < 4; i++) {
+                                data[current_pusher - 1].m_vertices.push_back(helper.m_vertices[(iv[i - (i == 1 ? 1 : 0)] - 1) * 3]);
+                                data[current_pusher - 1].m_vertices.push_back(helper.m_vertices[(iv[i - (i == 1 ? 1 : 0)] - 1) * 3 + 1]);
+                                data[current_pusher - 1].m_vertices.push_back(helper.m_vertices[(iv[i - (i == 1 ? 1 : 0)] - 1) * 3 + 2]);
+
+                                m_vertices_amount_loaded++;
+
+                                data[current_pusher - 1].m_texture_coordinates.push_back(helper.m_texture_coordinates[(it[i - (i == 1 ? 1 : 0)] - 1) * 2]);
+                                data[current_pusher - 1].m_texture_coordinates.push_back(helper.m_texture_coordinates[(it[i - (i == 1 ? 1 : 0)] - 1) * 2 + 1]);
+
+                                data[current_pusher - 1].m_normals.push_back(helper.m_normals[(in[i - (i == 1 ? 1 : 0)] - 1) * 3]);
+                                data[current_pusher - 1].m_normals.push_back(helper.m_normals[(in[i - (i == 1 ? 1 : 0)] - 1) * 3 + 1]);
+                                data[current_pusher - 1].m_normals.push_back(helper.m_normals[(in[i - (i == 1 ? 1 : 0)] - 1) * 3 + 2]);
+
+                            }
                         }
                     }
                     else {
-                        ss >> iv[0] >> it[0] >> in[0] >> iv[1] >> it[1] >> in[1] >> iv[2] >> it[2] >> in[2] >> iv[3] >> it[3] >> in[3];
+                        if(doubleSlash) {
+                            ss >> iv[0] >> in[0] >> iv[1] >> in[1] >> iv[2] >> in[2] >> iv[3] >> in[3];
+                        
+                            for(int i = 0; i < 3; i++) {
+                                data[current_pusher - 1].m_vertices.push_back(helper.m_vertices[(iv[i] - 1) * 3]);
+                                data[current_pusher - 1].m_vertices.push_back(helper.m_vertices[(iv[i] - 1) * 3 + 1]);
+                                data[current_pusher - 1].m_vertices.push_back(helper.m_vertices[(iv[i] - 1) * 3 + 2]);
 
-                        for(int i = 0; i < 3; i++) {
-                            data[current_pusher - 1].m_vertices.push_back(helper.m_vertices[(iv[i] - 1) * 3]);
-                            data[current_pusher - 1].m_vertices.push_back(helper.m_vertices[(iv[i] - 1) * 3 + 1]);
-                            data[current_pusher - 1].m_vertices.push_back(helper.m_vertices[(iv[i] - 1) * 3 + 2]);
+                                m_vertices_amount_loaded++;
 
-                            m_vertices_amount_loaded++;
-
-                            data[current_pusher - 1].m_texture_coordinates.push_back(helper.m_texture_coordinates[(it[i] - 1) * 2]);
-                            data[current_pusher - 1].m_texture_coordinates.push_back(helper.m_texture_coordinates[(it[i] - 1) * 2 + 1]);
-
-                            data[current_pusher - 1].m_normals.push_back(helper.m_normals[(in[i] - 1) * 3]);
-                            data[current_pusher - 1].m_normals.push_back(helper.m_normals[(in[i] - 1) * 3 + 1]);
-                            data[current_pusher - 1].m_normals.push_back(helper.m_normals[(in[i] - 1) * 3 + 2]);
+                                data[current_pusher - 1].m_normals.push_back(helper.m_normals[(in[i] - 1) * 3]);
+                                data[current_pusher - 1].m_normals.push_back(helper.m_normals[(in[i] - 1) * 3 + 1]);
+                                data[current_pusher - 1].m_normals.push_back(helper.m_normals[(in[i] - 1) * 3 + 2]);
+                            }
                         }
+                        else {
+                            ss >> iv[0] >> it[0] >> in[0] >> iv[1] >> it[1] >> in[1] >> iv[2] >> it[2] >> in[2];
 
-                        for(int i = 1; i < 4; i++) {
-                            data[current_pusher - 1].m_vertices.push_back(helper.m_vertices[(iv[i - (i == 1 ? 1 : 0)] - 1) * 3]);
-                            data[current_pusher - 1].m_vertices.push_back(helper.m_vertices[(iv[i - (i == 1 ? 1 : 0)] - 1) * 3 + 1]);
-                            data[current_pusher - 1].m_vertices.push_back(helper.m_vertices[(iv[i - (i == 1 ? 1 : 0)] - 1) * 3 + 2]);
+                            if(m_debug) {
+                                printf("Faces check:\t%d %d %d - %d %d %d - %d %d %d\n", iv[0], it[0], in[0], iv[1], it[1], in[1], iv[2], it[2], in[2]);
+                            }
 
-                            m_vertices_amount_loaded++;
+                            for(int i = 0; i < 3; i++) {
+                                data[current_pusher - 1].m_vertices.push_back(helper.m_vertices[(iv[i] - 1) * 3]);
+                                data[current_pusher - 1].m_vertices.push_back(helper.m_vertices[(iv[i] - 1) * 3 + 1]);
+                                data[current_pusher - 1].m_vertices.push_back(helper.m_vertices[(iv[i] - 1) * 3 + 2]);
 
-                            data[current_pusher - 1].m_texture_coordinates.push_back(helper.m_texture_coordinates[(it[i - (i == 1 ? 1 : 0)] - 1) * 2]);
-                            data[current_pusher - 1].m_texture_coordinates.push_back(helper.m_texture_coordinates[(it[i - (i == 1 ? 1 : 0)] - 1) * 2 + 1]);
+                                m_vertices_amount_loaded++;
 
-                            data[current_pusher - 1].m_normals.push_back(helper.m_normals[(in[i - (i == 1 ? 1 : 0)] - 1) * 3]);
-                            data[current_pusher - 1].m_normals.push_back(helper.m_normals[(in[i - (i == 1 ? 1 : 0)] - 1) * 3 + 1]);
-                            data[current_pusher - 1].m_normals.push_back(helper.m_normals[(in[i - (i == 1 ? 1 : 0)] - 1) * 3 + 2]);
+                                data[current_pusher - 1].m_texture_coordinates.push_back(helper.m_texture_coordinates[(it[i] - 1) * 2]);
+                                data[current_pusher - 1].m_texture_coordinates.push_back(helper.m_texture_coordinates[(it[i] - 1) * 2 + 1]);
 
+                                data[current_pusher - 1].m_normals.push_back(helper.m_normals[(in[i] - 1) * 3]);
+                                data[current_pusher - 1].m_normals.push_back(helper.m_normals[(in[i] - 1) * 3 + 1]);
+                                data[current_pusher - 1].m_normals.push_back(helper.m_normals[(in[i] - 1) * 3 + 2]);
+                            }
                         }
                     }
                 }

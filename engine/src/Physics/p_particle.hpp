@@ -37,6 +37,8 @@ namespace qe {
             m_force = (real)0.0;
         }
 
+        bool hasFiniteMass() { return m_inverse_mass >= 0.0f; }
+
         void addForce(Vector<real> force) {
             m_force += force;
         }
