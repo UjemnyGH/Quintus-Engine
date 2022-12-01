@@ -90,6 +90,65 @@ namespace qe
         std::vector<short> illumination;
     };
 
+    struct GLTF_Material {
+        bool m_doubleSided;
+        std::string m_name;
+        Vector<float> m_baseColor;
+        float m_metalicFactor;
+        float m_roughnessFactor;
+    };
+
+    struct GLTF_Mesh {
+        std::string m_name;
+        uint32_t m_position;
+        uint32_t m_normal;
+        uint32_t m_tex_coord;
+        uint32_t m_indices;
+
+        GLTF_Material m_material;
+    };
+
+    struct GLTF_BufferView {
+        uint32_t m_buffer;
+        uint32_t m_byte_length;
+        uint32_t m_byte_offset;
+        uint32_t m_target;
+    };
+
+    struct GLTF_Buffer {
+        uint32_t m_byte_length;
+        std::string m_uri;
+    };
+
+    struct GLTF_Accessor {
+        GLTF_BufferView* m_buffer_view;
+        uint32_t m_component_type;
+        uint32_t m_count;
+        Vector<float> max;
+        Vector<float> min;
+        std::string type;
+    };
+
+    struct GLTF_Node {
+        uint32_t m_id;
+        std::string m_name;
+    };
+
+    struct GLTF_Scene {
+        std::string m_name;
+        std::vector<GLTF_Node*> m_nodes;
+    };
+
+    struct GLTF_Data {
+        uint32_t scene;
+        std::vector<GLTF_Scene> m_scenes;
+        std::vector<GLTF_Material> m_materials;
+        std::vector<GLTF_Mesh> m_meshes;
+        std::vector<GLTF_Accessor> m_accessors;
+        std::vector<GLTF_BufferView> m_buffer_views;
+        std::vector<GLTF_Buffer> m_buffers;
+    };
+
     typedef QE_ModelType ModelType;
     typedef QE_BufferMeshData BufferMeshData;
     typedef QE_MaterialData MaterialData;

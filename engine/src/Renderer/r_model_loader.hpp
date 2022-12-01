@@ -6,6 +6,7 @@
 #include "../Core/c_engine_functions.hpp"
 #include "r_model_loader_helpers.hpp"
 #include <sstream>
+#include <bit>
 
 namespace qe
 {
@@ -13,6 +14,64 @@ namespace qe
     private:
         std::vector<RenderedData> m_data;
         bool m_model_reloaded = true;
+
+        GLTF_Data load_data_from_gltf_json_file(std::string const gltf_path) {
+            GLTF_Data data;
+
+            std::ifstream f(gltf_path, std::ios::binary);
+
+            if(f.bad() || f.fail() || !f.is_open()) {
+                std::cerr << "Cannot open file: " << gltf_path << std::endl;
+            }
+
+            std::string line;
+
+            bool scene_pick = false;
+
+            while(!f.eof()) {
+                getline(f, line);
+                
+                if(line.find("\"scene\"") == 0) {
+                    uint32_t scene;
+                    void *flushed;
+
+                    std::stringstream ss(line.c_str());
+
+                    ss >> flushed >> flushed >> scene;
+
+                    data.scene = scene;
+                }
+                else if(line.find("\"scenes\"") == 0) {
+                    scene_pick = true;
+                }
+            }
+        }
+
+        std::vector<BufferMeshData> LoadGLTFWithBin(std::string path) {
+            std::vector<BufferMeshData> result;
+
+            FILE *f = fopen(path.c_str(), "rb");
+
+            fseek(f, 0, SEEK_END);
+
+            std::vector<byte_t> data(ftell(f));
+
+            fseek(f, 0, SEEK_SET);
+
+            fread(data.data(), sizeof(byte_t), data.size(), f);
+
+            fclose(f);
+
+            byte_t bytes[4];
+            uint32_t byte_iterator = 0;
+            uint32_t byte_counter = 0;
+
+            for(byte_t byte : data) {
+                bytes[3 - byte_iterator] = byte;
+
+
+            }
+        }
 
         std::vector<BufferMeshData> LoadOBJ(std::string path) {
             std::vector<BufferMeshData> data;
