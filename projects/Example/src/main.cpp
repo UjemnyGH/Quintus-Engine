@@ -1,3 +1,15 @@
+/**
+ * @file main.cpp
+ * @author Piotr UjemnyGH Plombon
+ * @brief 
+ * @version 0.1
+ * @date 2022-12-03
+ * 
+ * @copyright Copyright (c) 2022
+ * 
+ * It need some changes to work!!!!
+ */
+
 #include "../../../engine/quintus.hpp"
 #include <random>
 #include <future>
@@ -15,6 +27,7 @@ public:
 qe::Renderer skybox;
 qe::Renderer bullets;
 qe::Renderer gun;
+qe::Renderer terrain;
 
 qe::math::Vector<float> playerPos = qe::math::Vector<float>(0.0f);
 qe::math::Vector<float> playerDir = qe::math::Vector<float>(0.0f, 0.0f, 1.0f);
@@ -29,7 +42,6 @@ bool move_press = false;
 bool strafe_press = false;
 bool camera = false;
 const float playerSpeed = 10.0f;
-
 
 void mouse(GLFWwindow* window, double xpos, double ypos) {
     if(glfwGetMouseButton(window, GLFW_MOUSE_BUTTON_1) == GLFW_PRESS) {
@@ -131,19 +143,48 @@ void Game::input() {
 
 qe::ModelLoader ml;
 qe::RenderedData bullet;
+qe::RenderedData terrain_ml;
 
 std::vector<qe::Particle> particles;
 
+qe::Particle player_prt;
+
+qe::ParticleForceRegistry player_reg;
+
+qe::ParticleGravity player_grav = qe::ParticleGravity(qe::Vector<float>(0.0f, -1.0f, 0.0f));
+
+std::vector<qe::Collider> terrainCl;
+
 void Game::Start() {
     // Code here
-
     glfwSetCursorPosCallback(Game::getWindowPtr(), mouse);
 
-    ml.LoadModelUnindexed("data/models/test_cube.obj");
+    player_reg.Add(&player_prt, &player_grav);
+
+    qe::g_globalLight = glm::vec3(0.0f, 1.0f, 0.0f);
+
+    ml.LoadModelUnindexed("data/models/terrain_test.obj");
 
     Game::setVSync(true);
     Game::UpdatePerspective();
     Game::m_fixed_update_per_second = 64;
+
+    Game::AddLayer(&terrain);
+    terrain.AddShader(LoadShader(qe::vertex_shader, qe::vertex));
+    terrain.AddShader(LoadShaderFromPath("data/shaders/light.frag", qe::fragment));
+    terrain.AddModel(ml.GetModelData(), "Terrain");
+
+    terrain_ml = ml.GetModelData();
+
+    for(uint32_t i = 0; i < terrain_ml.m_vertices.size() / 9; i++) {
+        terrainCl.resize(i);
+
+        terrainCl[terrainCl.size() - 1].m_position = qe::Vector<float>(terrain_ml.m_vertices[i * 9 + 0], terrain_ml.m_vertices[i * 9 + 1], terrain_ml.m_vertices[i * 9 + 2]);
+        terrainCl[terrainCl.size() - 1].m_size = qe::Vector<float>(terrain_ml.m_vertices[i * 9 + 3], terrain_ml.m_vertices[i * 9 + 4], terrain_ml.m_vertices[i * 9 + 5]);
+        terrainCl[terrainCl.size() - 1].m_third_point = qe::Vector<float>(terrain_ml.m_vertices[i * 9 + 6], terrain_ml.m_vertices[i * 9 + 7], terrain_ml.m_vertices[i * 9 + 8]);
+    }
+
+    ml.LoadModelUnindexed("data/models/test_cube.obj");
 
     Game::AddLayer(&gun);
     gun.m_render_with_g_projection = true;
@@ -183,6 +224,28 @@ void Game::Start() {
     skybox.SetScaleByID(0, 1000.0f, 1000.0f, 1000.0f);
 
     particles.resize(1);
+
+    /*qe::Json json;
+
+    json.LoadJSON("data/models/cube.gltf");
+
+    for(auto j : json.getMap()) {
+        std::cout << "Name: " << j.first << " = Value: " << j.second << std::endl;
+    }
+
+    std::string node_value = json.findValue("nodes");
+
+    std::cout << "Value of: \"nodes\" = " << node_value << std::endl;
+
+    uint32_t scene_value = json.convertTo<uint32_t>("scene");
+
+    std::cout << "Value of: \"scene\" converted to uint32_t = " << scene_value << std::endl;
+
+    qe::Json group1 = json.findGroup("materials");
+
+    for(auto j : group1.getMap()) {
+        std::cout << "Name: " << j.first << " = Value: " << j.second << std::endl;
+    }*/
 }
 
 bool binding = false;
@@ -191,14 +254,39 @@ void SetPos(uint32_t i , qe::Particle particle) {
     bullets.SetPositionByID(i, particle.m_position.x, particle.m_position.y, particle.m_position.z, false);
 }
 
+qe::ParticleForceRegistry pfrg;
+qe::ParticleGravity pg = qe::ParticleGravity(qe::Vector<float>(0.0f, -1.0f, 0.0f));
+qe::Collider player;
+qe::Collider player2;
+
 void Game::FixedUpdate() {
 
     float delay = Game::getFixedUpdateTimeIntervalInSec();
 
-    for(int i = 0; i < particles.size(); i++) {
-        particles[i].integrate(Game::time.GetDeltaTime());
+    pfrg.UpdateForces(delay);
+
+    player.m_size = qe::Vector<float>(0.0f, -1.0f, 0.0f);
+    player2.m_size = qe::Vector<float>(0.0f, 10.0f, 0.0f);
+
+    player_reg.UpdateForces(delay);
+
+    for(auto terr : terrainCl) {
+        if(player2.CheckRayToPlane(&terr) || player.CheckRayToPlane(&terr)) {
+            player_prt.m_acceleration = qe::Vector<float>(0.0f, 0.1f, 0.0f);
+        }
     }
 
+    playerPos = player_prt.m_position;
+
+    /*if(player.CheckRayToPlane(&terrainCl, 0.1f) || player2.CheckRayToPlane(&terrainCl, 0.1f)) {
+        playerPos.y += 10.0f * delay;
+    }
+    else {
+        playerPos.y -= 10.0f * delay;
+    }*/
+
+    //printf("%d\n", player.CheckRayToPlane(&terrainCl, 0.1f));
+    
     binding = true;
 }
 
@@ -216,6 +304,8 @@ void Game::Update() {
     }
 
     skybox.SetPosition(playerPos.x, playerPos.y, playerPos.z);
+    player.m_position = playerPos;
+    player2.m_position = playerPos;
 }
 
 bool clicked = false;
@@ -233,9 +323,13 @@ void Game::LateUpdate() {
         particles[particles.size() - 1].m_acceleration = qe::Vector<qe::real>(0.0f);
         particles[particles.size() - 1].m_velocity = qe::Vector<qe::real>(0.0f);
         particles[particles.size() - 1].addForce(playerDir * 1000.0f);
+        particles[particles.size() - 1].setMass(1.0f);
+
+        pfrg.Add(&particles[particles.size() - 1], &pg);
 
         if(bullets.GetModelAmount() > 200) {
             bullets.RemoveModel(0, false);
+            pfrg.Remove(&particles[0], &pg);
             particles.erase(particles.begin());
         }
     }

@@ -8,6 +8,94 @@
 #include <unordered_map>
 
 namespace qe {
+    class ColliderComponent {
+    protected:
+        qe::Vector<float> m_position = qe::Vector<float>(0.0f);
+        qe::Vector<float> m_size = qe::Vector<float>(1.0f);
+
+        std::string m_collider_type_name = "___ColliderComponent___";
+    
+    public:
+        bool m_collision = false;
+
+        std::string get_type() { return m_collider_type_name; }
+
+        qe::Vector<float> get_position() { return m_position; }
+
+        void set_position(qe::Vector<float> const &position) { m_position = position; }
+
+        qe::Vector<float> get_size() { return m_size; }
+        
+        void set_size(qe::Vector<float> const &size) { m_size = size; }
+
+        qe::Vector<float> get_radiuses() { return m_size; }
+
+        void set_radiuses(qe::Vector<float> _radiuses) { m_size = _radiuses; }
+
+        virtual bool is_colliding(ColliderComponent &_component) { return false;}
+    };
+
+    class AABB : public ColliderComponent {
+    public:
+        AABB(qe::Vector<float> _position = qe::Vector<float>(0.0f), qe::Vector<float> _size = qe::Vector<float>(1.0f)) {
+            m_position = _position;
+            m_size = _size;
+
+            m_collider_type_name = "_AABB";
+        }
+
+        virtual bool is_colliding(ColliderComponent &_aabb) override {
+            return (m_position - m_size) + (m_size * 2.0f) >= (_aabb.get_position() - _aabb.get_size()) && (_aabb.get_position() - _aabb.get_size()) + (_aabb.get_size() * 2.0f) >= (m_position - m_size);
+        }
+    };
+
+    class BallToBall : public ColliderComponent {
+    public:
+        BallToBall(qe::Vector<float> _position = qe::Vector<float>(0.0f), qe::Vector<float> _radiuses = qe::Vector<float>(1.0f)) {
+            set_radiuses(_radiuses);
+            set_position(_position);
+
+            m_collider_type_name = "_BallToBall";
+        }
+
+        virtual bool is_colliding(ColliderComponent &_sphere) {
+            bool collX = abs((m_position.y - _sphere.get_position().y) * (m_position.y - _sphere.get_position().y) + (m_position.z - _sphere.get_position().z) * (m_position.z - _sphere.get_position().z)) <= (get_radiuses().x + _sphere.get_radiuses().x) * (get_radiuses().x + _sphere.get_radiuses().x);
+            bool collY = abs((m_position.x - _sphere.get_position().x) * (m_position.x - _sphere.get_position().x) + (m_position.z - _sphere.get_position().z) * (m_position.z - _sphere.get_position().z)) <= (get_radiuses().y + _sphere.get_radiuses().y) * (get_radiuses().y + _sphere.get_radiuses().y);
+            bool collZ = abs((m_position.y - _sphere.get_position().y) * (m_position.y - _sphere.get_position().y) + (m_position.x - _sphere.get_position().x) * (m_position.x - _sphere.get_position().x)) <= (get_radiuses().z + _sphere.get_radiuses().z) * (get_radiuses().z + _sphere.get_radiuses().z);
+        
+            return collX && collY && collZ;
+        }
+    };
+
+    class ColliderComponentHandler {
+    private:
+        std::unordered_map<std::string, ColliderComponent*> m_collider_components;
+
+    public:
+        ColliderComponentHandler() = default;
+
+        void add_collider(ColliderComponent* _collider_component, std::string name = "__ColliderComponent__") {
+            m_collider_components.insert(std::make_pair(name, _collider_component));
+        }
+
+        void remove_collider(std::string name) {
+            m_collider_components.erase(name);
+        }
+
+        void check_collision() {
+
+            for(auto collider : m_collider_components) {
+                for(auto coll : m_collider_components) {
+                    if(collider.second != coll.second) {
+                        if(collider.second->get_type() == coll.second->get_type()) {
+                            collider.second->m_collision = collider.second->is_colliding(*coll.second);
+                        }
+                    }
+                }
+            }
+        }
+    };
+
     class Collider {
     public:
         math::Vector<float> m_position = math::Vector<float>(0.0f);
@@ -145,26 +233,62 @@ namespace qe {
             return false;
         }
 
-        bool CheckPointToPlane(Collider* collider, float error_margin = 0.1f, bool this_object_as_point = true, math::Vector<float> direction = math::Vector<float>(0.0f, -1.0f, 0.0f)) {
+        bool CheckRayToPlane(Collider* collider, float error_margin = 0.01f, bool this_object_as_point = true) {
             if(this_object_as_point) {
+                Vector<float> high_x = Vector<float>::highest_on_x({collider->m_position, collider->m_size, collider->m_third_point}, true);
+                Vector<float> high_y = Vector<float>::highest_on_y({collider->m_position, collider->m_size, collider->m_third_point}, true);
+                Vector<float> high_z = Vector<float>::highest_on_z({collider->m_position, collider->m_size, collider->m_third_point}, true);
+
+                Vector<float> low_x = Vector<float>::lowest_on_x({collider->m_position, collider->m_size, collider->m_third_point}, true);
                 Vector<float> low_y = Vector<float>::lowest_on_y({collider->m_position, collider->m_size, collider->m_third_point}, true);
+                Vector<float> low_z = Vector<float>::lowest_on_z({collider->m_position, collider->m_size, collider->m_third_point}, true);
 
-                Vector<float> middle = (collider->m_position + collider->m_size + collider->m_third_point) / 3.0f;
+                Vector<float> normal = math::find_plane_normal(collider->m_position, collider->m_size, collider->m_third_point);
+                
+                float D = m_position.dot(m_size);
 
-                Vector<float> distance_axial = Vector<float>(abs(middle.x - m_position.x), abs(middle.y), abs(middle.z - m_position.z));
-                // yz, xz, xy
-                Vector<float> lengths = Vector<float>(pow(distance_axial.y, 2) + pow(distance_axial.z, 2), pow(distance_axial.x, 2) + pow(distance_axial.z, 2), pow(distance_axial.x, 2) + pow(distance_axial.y, 2));
+                float numer = normal.dot(m_position);
+                float denom = normal.dot(m_size);
 
+                float t = -(numer / denom);
 
+                Vector<float> collision_point = m_position + m_size * t;
 
-                Vector<float> w;
+                if(collision_point < high_x && collision_point < high_z && collision_point < high_y && collision_point > low_x && collision_point > low_z && collision_point > low_y && m_position > collision_point - error_margin && m_position < collision_point + error_margin) {
+                    return true;
+                }
 
-                Vector<float> hit_point = low_y + distance_axial;
-
-
+                if(m_position > collision_point - error_margin && m_position < collision_point + error_margin) {
+                    return true;
+                }
             }
             else {
+                Vector<float> high_x = Vector<float>::highest_on_x({m_position, m_size, m_third_point}, true);
+                Vector<float> high_y = Vector<float>::highest_on_y({m_position, m_size, m_third_point}, true);
+                Vector<float> high_z = Vector<float>::highest_on_z({m_position, m_size, m_third_point}, true);
+
+                Vector<float> low_x = Vector<float>::lowest_on_x({m_position, m_size, m_third_point}, true);
+                Vector<float> low_y = Vector<float>::lowest_on_y({m_position, m_size, m_third_point}, true);
+                Vector<float> low_z = Vector<float>::lowest_on_z({m_position, m_size, m_third_point}, true);
+
                 Vector<float> normal = math::find_plane_normal(m_position, m_size, m_third_point);
+                
+                float D = m_position.dot(collider->m_size);
+
+                float numer = normal.dot(collider->m_position);
+                float denom = normal.dot(collider->m_size);
+
+                float t = -(numer / denom);
+
+                Vector<float> collision_point = collider->m_position + collider->m_size * t;
+
+                if(collision_point < high_x && collision_point < high_z && collision_point < high_y && collision_point > low_x && collision_point > low_z && collision_point > low_y && collider->m_position > collision_point - error_margin && collider->m_position < collision_point + error_margin) {
+                    return true;
+                }
+
+                if(collider->m_position > collision_point - error_margin && collider->m_position < collision_point + error_margin) {
+                    return true;
+                }
             }
 
             return false;

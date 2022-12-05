@@ -16,6 +16,8 @@ namespace qe {
         {
             Particle *m_particle;
             ParticleForceGenerator *m_force_gen;
+
+            bool operator==(ParticleForceRegistration const &p) { return p.m_particle == m_particle && p.m_force_gen == m_force_gen; }
         };
 
         std::vector<ParticleForceRegistration> m_registrations;
@@ -25,22 +27,27 @@ namespace qe {
             m_registrations.push_back({particle, force_generator});
         }
 
-        /*void Remove(Particle *particle, ParticleForceGenerator *force_generator) {
+        void Remove(Particle *particle, ParticleForceGenerator *force_generator) {
+            ParticleForceRegistration pfr = {particle, force_generator};
 
-            ParticleForceRegistration reg = {particle, force_generator};
-
-            uint32_t iter = Search(m_registrations, reg);
+            auto iter = std::find(m_registrations.begin(), m_registrations.end(), pfr);
             
-            m_registrations.erase(m_registrations.begin() + iter);
-        }*/
+            m_registrations.erase(iter);
+        }
 
         void Clear() {
             m_registrations.clear();
         }
 
-        void UpdateForces(real duration) {
-            for(std::vector<ParticleForceRegistration>::iterator i = m_registrations.begin(); i != m_registrations.end(); i++) {
+        void UpdateForces(real duration, bool integrate = true) {
+            auto end_iter = m_registrations.end();
+
+            for(auto i = m_registrations.begin(); i != end_iter; i++) {
                 i->m_force_gen->updateForce(i->m_particle, duration);
+
+                if(integrate) {
+                    i->m_particle->integrate(duration);
+                }
             }
         }
     };

@@ -46,6 +46,17 @@ namespace qe
     }
 
     /**
+     * @brief Request termination
+     * 
+     * @param msg 
+     */
+    void qe_req_term(std::string msg) {
+        std::cerr << "REQUESTED TERMINATION: " << msg << std::endl;
+
+        exit(msg.length());
+    }
+
+    /**
      * @brief Load binary file and convert values in it to floats in little endian 
      * 
      * @param filename 

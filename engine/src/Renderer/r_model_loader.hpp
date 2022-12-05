@@ -47,7 +47,7 @@ namespace qe
             }
         }
 
-        std::vector<BufferMeshData> LoadGLTFWithBin(std::string path) {
+        std::vector<BufferMeshData> LoadGLTFBin(std::string path) {
             std::vector<BufferMeshData> result;
 
             FILE *f = fopen(path.c_str(), "rb");
@@ -69,7 +69,11 @@ namespace qe
             for(byte_t byte : data) {
                 bytes[3 - byte_iterator] = byte;
 
+                byte_iterator++;
 
+
+
+                byte_counter++;
             }
         }
 
