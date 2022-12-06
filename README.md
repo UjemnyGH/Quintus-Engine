@@ -7,8 +7,18 @@ Here you have my public game engines on github (obviusly unfinished):
 [Awesome](https://github.com/UjemnyGH/Awesome)
 [AwesomeV2](https://github.com/UjemnyGH/AwesomeV2)
 
+Documentation (unfinished):
+[Documentation](docs/docs.md)
+
 ----------
 ### Libraries used in project:
+
+Remember that this list can and propably change future to including only libs
+that controls graphics, audio etc. becouse handling these things can be hard and
+sometimes it`s OS related. But still I want to write as much as by my own like 
+math, image, font, 3D model loader libraries, you know simple stuff where file
+format, knowledge about topic or functioning something really matters.
+
 1. GLFW
 2. GLAD
 3. GLM
