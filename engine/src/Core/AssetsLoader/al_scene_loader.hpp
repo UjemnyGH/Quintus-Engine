@@ -142,50 +142,46 @@ namespace qe {
             return (uint64_t)-1;
         }
 
-        void* getElement(uint32_t n) {
-            void* result;
-
+        auto getElement(uint32_t n) {
             switch(m_values_type) {
                 case v_float:
-                    result = (void*)&m_flt[n];
+                    return m_flt[n];
 
                     break;
 
-                case v_double:
-                    result = (void*)&m_dbl[n];
+                /*case v_double:
+                    return m_dbl[n];
 
                     break;
 
                 case v_int:
-                    result = (void*)&m_int[n];
+                    return &m_int[n];
 
                     break;
 
                 case v_uint:
-                    result = (void*)&m_uint[n];
+                    return m_uint[n];
 
                     break;
 
                 case v_char:
-                    result = (void*)&m_char[n];
+                    return m_char[n];
 
                     break;
 
                 case v_string:
-                    result = (void*)m_string[n];
+                    return m_string[n];
 
                     break;
 
                 case v_bool:
-                    result = (void*)&m_bool[n];
+                    return m_bool[n];
 
-                    break;
+                    break;*/
 
                 default:
                     break;
             }
-
-            return result;
         }
 
         ~ScenePossibleValues() {}
@@ -477,8 +473,12 @@ namespace qe {
                         m_scene_structs[m_scene_structs.size() - 1].m_scene_struct[m_scene_structs[m_scene_structs.size() - 1].m_scene_struct.size() - 1].m_values_type = v_bool;
                     }
                     else if(keyword == make_bits(scene_var_value_separator)) {
-                        if(!value_to_convert_recording && keyword_count > 1)
+                        if(!value_to_convert_recording && keyword_count > 1) {
                             m_scene_structs[m_scene_structs.size() - 1].m_scene_struct[m_scene_structs[m_scene_structs.size() - 1].m_scene_struct.size() - 1].add_value(value_to_convert);
+                            float val = m_scene_structs[m_scene_structs.size() - 1].m_scene_struct[m_scene_structs[m_scene_structs.size() - 1].m_scene_struct.size() - 1].getElement(m_scene_structs[m_scene_structs.size() - 1].m_scene_struct[m_scene_structs[m_scene_structs.size() - 1].m_scene_struct.size() - 1].m_scene_values_size);
+
+                            std::cout << "Pushed value " << val << " Value " << value_to_convert.c_str() << std::endl;
+                        }
 
                         current_value++;
 

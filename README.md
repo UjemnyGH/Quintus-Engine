@@ -25,6 +25,9 @@ format, knowledge about topic or functioning something really matters.
 4. stb_image
 5. stb_truetype
 
+##### ImGui library:
+[ImGui](https://github.com/ocornut/imgui)
+
 ----------
 ### To make new project
 1. Go to projects using cd

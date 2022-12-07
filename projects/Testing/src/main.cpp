@@ -30,8 +30,8 @@ void Game::Start() {
             std::cout << "Variable name : " << m.m_var_name << " Values : " << std::endl;
 
             for(uint32_t i = 0; i < m.m_scene_values_size; i++) {
-                float *val_ptr = (float*)m.getElement(i);
-                std::cout << "\t" << *val_ptr << std::endl;
+                float val_ptr = m.getElement(i);
+                std::cout << "\t" << val_ptr << std::endl;
             }
         }  
     }

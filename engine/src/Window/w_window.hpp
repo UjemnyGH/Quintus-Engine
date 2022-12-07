@@ -2,8 +2,13 @@
 #ifndef __W_WINDOW_
 #define __W_WINDOW_
 
+#include "../../vendor/imgui/imgui.h"
+#include "../../vendor/imgui/imgui_impl_opengl3.h"
+#include "../../vendor/imgui/imgui_impl_glfw.h"
+#include "../../vendor/imgui/imgui_impl_vulkan.h"
 #include "../../vendor/glad/glad.h"
 #include <GLFW/glfw3.h>
+#include <vulkan/vulkan.hpp>
 #include "../Core/c_layers.hpp"
 #include "../Core/c_engine_functions.hpp"
 #include "../Core/c_time.hpp"
