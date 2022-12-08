@@ -13,6 +13,7 @@
 #include "../Core/c_engine_functions.hpp"
 #include "../Core/c_time.hpp"
 #include "../Renderer/r_renderer.hpp"
+#include "../Scripting/s_core.hpp"
 #include <thread>
 #include <chrono>
 
@@ -196,6 +197,8 @@ namespace qe {
 
                 FixedUpdate();
 
+                m_layer_handler.AutoFixedUpdate();
+
                 std::this_thread::sleep_for(std::chrono::nanoseconds(1000000000 / m_fixed_update_per_second));
             }
         }
@@ -255,6 +258,8 @@ namespace qe {
          * 
          */
         void run() {
+            __initialize_lua();
+
             Awake();
 
             glfwInit();

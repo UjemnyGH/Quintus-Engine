@@ -7,6 +7,7 @@
 #include <map>
 #include <sstream>
 #include <fstream>
+#include <bit>
 
 const std::string __scene_file_extension__ = ".qescene";
 
@@ -21,6 +22,158 @@ namespace qe {
         v_bool,
         v_null,
     };
+
+    uint32_t invert_uint32_by_bytes(uint32_t const &number) {
+        return (number << 8 * 3) + ((number << 8 * 3) >> 8 * 1) + ((number << 8 * 3) >> 8 * 2) + ((number << 8 * 3) >> 8 * 3);
+    }
+
+    uint64_t invert_uint64_by_bytes(uint64_t const &number) {
+        return (number << 8 * 7) + ((number << 8 * 7) >> 8 * 1) + ((number << 8 * 7) >> 8 * 2) + ((number << 8 * 7) >> 8 * 3) + ((number << 8 * 7) >> 8 * 4) + ((number << 8 * 7) >> 8 * 5) + ((number << 8 * 7) >> 8 * 6) + ((number << 8 * 7) >> 8 * 7);
+    }
+
+    template<typename T>
+    T* convert_from_bits_little_endian(byte_t *value_bytes, size_t const &size, ScenePossibleValuesTypes const &type) {
+        std::vector<T> result;
+
+        byte_t bytes[size];
+
+        for(size_t i = 0; i < size / 8; i++) {
+            bytes[i * 8 + 0] = value_bytes[i * 8 + 7];
+            bytes[i * 8 + 1] = value_bytes[i * 8 + 6];
+            bytes[i * 8 + 2] = value_bytes[i * 8 + 5];
+            bytes[i * 8 + 3] = value_bytes[i * 8 + 4];
+            bytes[i * 8 + 4] = value_bytes[i * 8 + 3];
+            bytes[i * 8 + 5] = value_bytes[i * 8 + 2];
+            bytes[i * 8 + 6] = value_bytes[i * 8 + 1];
+            bytes[i * 8 + 7] = value_bytes[i * 8 + 0];
+        }
+
+        uint32_t value_little_endian_32[size / 4];
+        uint64_t value_little_endian_64[size / 8];
+
+        for(size_t i = 0; i < size / 4; i++) {
+            value_little_endian_32[i] += (uint32_t)bytes[i * 4 + 0];
+            value_little_endian_32[i] += (uint32_t)bytes[i * 4 + 1] << 8;
+            value_little_endian_32[i] += (uint32_t)bytes[i * 4 + 2] << 8 * 2;
+            value_little_endian_32[i] += (uint32_t)bytes[i * 4 + 3] << 8 * 3;
+        }
+
+        for(size_t i = 0; i < size / 8; i++) {
+            value_little_endian_64[i] += (uint32_t)bytes[i * 8 + 0];
+            value_little_endian_64[i] += (uint32_t)bytes[i * 8 + 1] << 8;
+            value_little_endian_64[i] += (uint32_t)bytes[i * 8 + 2] << 8 * 2;
+            value_little_endian_64[i] += (uint32_t)bytes[i * 8 + 3] << 8 * 3;
+            value_little_endian_64[i] += (uint32_t)bytes[i * 8 + 4] << 8 * 4;
+            value_little_endian_64[i] += (uint32_t)bytes[i * 8 + 5] << 8 * 5;
+            value_little_endian_64[i] += (uint32_t)bytes[i * 8 + 6] << 8 * 6;
+            value_little_endian_64[i] += (uint32_t)bytes[i * 8 + 7] << 8 * 7;
+        }
+        
+        switch(type) {
+            case v_float:
+                for(size_t i = 0; i < size / 4; i++) {
+                    result.push_back(std::bit_cast<float>(value_little_endian_32[i]));
+                }
+
+                break;
+
+            case v_double:
+                for(size_t i = 0; i < size / 8; i++) {
+                    result.push_back(std::bit_cast<double>(value_little_endian_64[i]));
+                }
+
+                break;
+
+            case v_int:
+                for(size_t i = 0; i < size / 4; i++) {
+                    result.push_back(std::bit_cast<int>(value_little_endian_32[i]));
+                }
+
+                break;
+
+            case v_uint:
+                for(size_t i = 0; i < size / 4; i++) {
+                    result.push_back(std::bit_cast<uint>(value_little_endian_32[i]));
+                }
+
+                break;
+
+            case v_char:
+                for(size_t i = 0; i < size; i++) {
+                    result.push_back(value_bytes[i]);
+                }
+
+                break;
+
+            case v_string:
+                for(size_t i = 0; i < size; i++) {
+                    result.push_back(value_bytes[i]);
+                }
+
+                break;
+
+            case v_bool:
+                for(size_t i = 0; i < size; i++) {
+                    result.push_back(value_bytes[i] != 0 ? true : false);
+                }
+
+                break;
+
+            default:
+
+                break;
+        }
+        
+        return result.data();
+    }
+
+    template<typename T>
+    uint64_t* convert_to_bits_uint64_little_endian(T *value, size_t const &size) {
+        std::vector<uint64_t> bytes64;
+
+        for(size_t i = 0; i < size; i++) {
+            uint64_t tmp;
+            std::memcpy(&tmp, &value[i], sizeof(value[i]));
+
+            bytes64.push_back(invert_uint64_by_bytes(tmp));
+        }
+        
+        return bytes64.data();
+    }
+
+    template<typename T>
+    uint32_t* convert_to_bits_uint32_little_endian(T *value, size_t const &size) {
+        std::vector<uint32_t> bytes32;
+
+        for(size_t i = 0; i < size; i++) {
+            uint64_t tmp;
+            std::memcpy(&tmp, &value[i], sizeof(value[i]));
+
+            bytes32.push_back(invert_uint32_by_bytes(tmp));
+        }
+        
+        return bytes32.data();
+    }
+
+    byte_t* convert_uint64_to_bytes(uint64_t const &bits) {
+        byte_t bytes[8];
+        
+        for(int i = 0; i < 8; i++) {
+            bytes[i] = (bits << 56 - (i * 8)) >> 56;
+        }
+
+        return bytes;
+    }
+
+    byte_t* convert_uint32_to_bytes(uint32_t const &bits) {
+        byte_t bytes[4];
+        
+        for(int i = 0; i < 4; i++) {
+            bytes[i] = (bits << 24 - (i * 8)) >> 24;
+        }
+
+        return bytes;
+    }
 
     struct ScenePossibleValues {
         union {
@@ -368,7 +521,34 @@ namespace qe {
             m_scene_data += (char)scene_separator;
             m_scene_data += make_bits(scene_var_beg_value);
 
-            for(uint8_t i = 0; i < data_size; i++) {
+            uint64_t *values64 = new uint64_t[data_size];
+            uint32_t *values32 = new uint32_t[data_size];
+
+            if(sizeof(T) < 8) {
+                values32 = convert_to_bits_uint32_little_endian(data, data_size);
+            } 
+            else if(sizeof(T) == 8) {
+                values64 = convert_to_bits_uint64_little_endian(data, data_size);
+            }
+
+            for(uint32_t i = 0; i < data_size; i++) {
+                byte_t *bytes = new byte_t[sizeof(T) == 8 ? 8 : 4];
+                bytes = sizeof(T) == 8 ? convert_uint64_to_bytes(values64[i]) : convert_uint32_to_bytes(values32[i]);
+
+                for(int i = 0; i < (sizeof(T) == 8 ? 8 : 4); i++) {
+                    m_scene_data += bytes[i];
+                }
+
+                m_scene_data += (char)scene_separator;
+                m_scene_data += make_bits(scene_var_value_separator);
+
+                delete[] bytes;
+            }
+
+            delete[] values32;
+            delete[] values64;
+
+            /*for(uint8_t i = 0; i < data_size; i++) {
                 std::string var_data = std::to_string(data[i]);
 
                 for(auto v : var_data) {
@@ -377,11 +557,12 @@ namespace qe {
 
                 m_scene_data += (char)scene_separator;
                 m_scene_data += make_bits(scene_var_value_separator);
-            }
+            }*/
 
             m_scene_data += (char)scene_separator;
         }
 
+        // FIXME:
         void ReadScene(std::string const &scene_name) {
             std::ifstream f(scene_name + __scene_file_extension__, std::ios::binary | std::ios::ate);
 
@@ -394,6 +575,8 @@ namespace qe {
             f.read(_scene.data(), _scene.size());
 
             f.close();
+
+            std::cout << _scene << std::endl;
 
             bool scene_beginned = false;
             bool separator_find = false;

@@ -6,13 +6,17 @@ public:
     virtual void Update() override;
 };
 
-qe::Scene scene1("MainScene");
-qe::Scene scene2;
+/*qe::Scene scene1("MainScene");
+qe::Scene scene2;*/
+
+qe::Script player("player", "Player");
 
 void Game::Start() {
     // Code here
 
-    scene1.AddStructData("Player");
+    //Game::AddLayer(&player);
+
+    /*scene1.AddStructData("Player");
     float playerP[] = {1.0f, 1.0f, 1.0f};
     scene1.AddPartSceneData(playerP, sizeof(playerP) / sizeof(playerP[0]), "PlayerPosition", qe::v_float);
     scene1.AddPartSceneData(playerP, sizeof(playerP) / sizeof(playerP[0]), "PlayerDirection", qe::v_float);
@@ -36,7 +40,7 @@ void Game::Start() {
         }  
     }
 
-    qe::qe_req_term("SCENE TEST");
+    qe::qe_req_term("SCENE TEST");*/
 }
 
 void Game::Update() {

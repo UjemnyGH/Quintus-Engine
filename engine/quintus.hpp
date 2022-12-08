@@ -11,6 +11,7 @@
 #include "src/Core/c_json.hpp"
 #include "src/Core/AssetsLoader/al_scene_loader.hpp"
 #include "src/Physics/p_physics.hpp"
+#include "src/Scripting/s_core.hpp"
 #include "src/UI/ui_ui.hpp"
 
 // Always on end!!!

@@ -16,6 +16,7 @@ namespace qe {
         uint32_t m_id;
         static uint32_t m_static_count;
         bool m_auto_start = false;
+        bool m_explict_fixed_update_implementation = false;
 
         QE_Layer(std::string name = "Layer") : m_layer_debug_name(name) {}
 
@@ -30,6 +31,12 @@ namespace qe {
          * 
          */
         virtual void Update() {}
+
+        /**
+         * @brief Called every fixed time
+         * 
+         */
+        virtual void FixedUpdateExplict() {}
 
         /**
          * @brief Call on end of layer
@@ -111,6 +118,18 @@ namespace qe {
         void AutoUpdate() {
             for (QE_Layer* layer : m_layers) {
                 layer->Update();
+            }
+        }
+
+        /**
+         * @brief Automaticly updates fixed update functions if set
+         * 
+         */
+        void AutoFixedUpdate() {
+            for(QE_Layer* layer : m_layers) {
+                if(layer->m_explict_fixed_update_implementation) {
+                    layer->FixedUpdateExplict();
+                }
             }
         }
 
