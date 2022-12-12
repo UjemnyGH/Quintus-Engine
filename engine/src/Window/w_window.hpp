@@ -281,6 +281,10 @@ namespace qe {
             }
 
             glEnable(GL_DEPTH_TEST);
+            glDepthFunc(GL_LESS);
+
+            glEnable(GL_BLEND);
+            glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 
             AddLayer(&time);
 
@@ -290,7 +294,7 @@ namespace qe {
 
             UpdatePerspective();
 
-            std::thread fixed_update_thread(&QE_Window::fixedUpdateCallback, this);
+            std::jthread fixed_update_thread(&QE_Window::fixedUpdateCallback, this);
 
             fixed_update_thread.detach();
 
@@ -311,6 +315,8 @@ namespace qe {
 
                 LateUpdate();
             }
+
+            fixed_update_thread.request_stop();
 
             glfwTerminate();
         }

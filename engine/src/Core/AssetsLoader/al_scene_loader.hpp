@@ -1,6 +1,6 @@
 #pragma once
-#ifndef __AL_SCENE_LOADER_
-#define __AL_SCENE_LOADER_
+#ifndef __AL_SCENE_LOADER_OLD_
+#define __AL_SCENE_LOADER_OLD_
 
 #include <string>
 #include "../c_algorithms.hpp"

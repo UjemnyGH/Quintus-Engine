@@ -270,11 +270,11 @@ void Game::FixedUpdate() {
 
     player_reg.UpdateForces(delay);
 
-    for(auto terr : terrainCl) {
+    /*for(auto terr : terrainCl) {
         if(player2.CheckRayToPlane(&terr) || player.CheckRayToPlane(&terr)) {
             player_prt.m_acceleration = qe::Vector<float>(0.0f, 0.1f, 0.0f);
         }
-    }
+    }*/
 
     playerPos = player_prt.m_position;
 

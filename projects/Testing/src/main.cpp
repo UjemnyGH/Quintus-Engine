@@ -9,12 +9,17 @@ public:
 /*qe::Scene scene1("MainScene");
 qe::Scene scene2;*/
 
-qe::Script player("player", "Player");
+qe::ScriptLua player;
+qe::ScriptLua camera;
 
 void Game::Start() {
     // Code here
 
-    //Game::AddLayer(&player);
+    player.load_script("player", "Player");
+    camera.load_script("camera", "Camera");
+
+    Game::AddLayer(&player);
+    Game::AddLayer(&camera);
 
     /*scene1.AddStructData("Player");
     float playerP[] = {1.0f, 1.0f, 1.0f};

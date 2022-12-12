@@ -25,7 +25,7 @@ namespace qe
         Shader m_sh;
         Ebo m_ebo;
         std::vector<uint32_t> m_shaders;
-        uint32_t m_textures_amount = 0;
+        uint32_t m_textures_amount = 1;
         std::vector<uint32_t> m_textures_priority_queue;
 
         Rendered m_rendered;
@@ -94,10 +94,11 @@ namespace qe
 
             m_sh.Bind();
 
-            for(auto tex : m_textures) {
-                tex.Init();
-                tex.Uniform(m_sh.m_id, "Textures");
+            for(int i = 0; i < 32; i++) {
+                m_textures[i].Init();
             }
+
+            m_textures[0].Uniform(m_sh.m_id, "Textures");
 
             m_vbos.resize(5);
             
@@ -122,8 +123,10 @@ namespace qe
         void AddTexture(const std::string name) {
             //printf("Texxure amount: %d, Priority %d, Name %s\n", m_textures_amount, m_textures_priority_queue.size(), name.c_str());
             //fflush(stdout);
+            m_sh.Bind();
+            m_vao.Bind();
 
-            if(m_textures_amount < 32 && m_textures_priority_queue.size() == 0) {
+            if(m_textures_amount < 32 && m_textures_priority_queue.size() < 1) {
                 m_textures[m_textures_amount].Bind(name, GL_REPEAT, m_render_pixels);
                 m_textures_amount++;
             }
@@ -136,6 +139,19 @@ namespace qe
             else {
                 m_textures[31].Bind(name, GL_REPEAT, m_render_pixels);
             }
+
+            m_vao.Unbind();
+            m_sh.Unbind();
+        }
+
+        void AddTextureWithForcedID(const std::string name, uint32_t id) {
+            m_sh.Bind();
+            m_vao.Bind();
+
+            m_textures[id].Bind(name, GL_REPEAT, m_render_pixels);
+
+            m_vao.Unbind();
+            m_sh.Unbind();
         }
 
         /**
@@ -182,38 +198,9 @@ namespace qe
                 m_sh.Bind();
                 m_vao.Bind();
 
-                m_textures[0].Bind(0);
-                m_textures[1].Bind(1);
-                m_textures[2].Bind(2);
-                m_textures[3].Bind(3);
-                m_textures[4].Bind(4);
-                m_textures[5].Bind(5);
-                m_textures[6].Bind(6);
-                m_textures[7].Bind(7);
-                m_textures[8].Bind(8);
-                m_textures[9].Bind(9);
-                m_textures[10].Bind(10);
-                m_textures[11].Bind(11);
-                m_textures[12].Bind(12);
-                m_textures[13].Bind(13);
-                m_textures[14].Bind(14);
-                m_textures[15].Bind(15);
-                m_textures[16].Bind(16);
-                m_textures[17].Bind(17);
-                m_textures[18].Bind(18);
-                m_textures[19].Bind(19);
-                m_textures[20].Bind(20);
-                m_textures[21].Bind(21);
-                m_textures[22].Bind(22);
-                m_textures[23].Bind(23);
-                m_textures[24].Bind(24);
-                m_textures[25].Bind(25);
-                m_textures[26].Bind(26);
-                m_textures[27].Bind(27);
-                m_textures[28].Bind(28);
-                m_textures[29].Bind(29);
-                m_textures[30].Bind(30);
-                m_textures[31].Bind(31);
+                for(int i = 1; i < 32; i++) {
+                    m_textures[i].Bind(i);
+                }
 
                 if(m_render_with_g_projection) {
                     glUniformMatrix4fv(glGetUniformLocation(m_sh.m_id, "projection"), 1, GL_FALSE, glm::value_ptr(g_projection));
@@ -712,6 +699,16 @@ namespace qe
         }
 
         /**
+         * @brief Get the Model Color object
+         * 
+         * @param id 
+         * @return Vector<float> 
+         */
+        Vector<float> GetModelColor(uint32_t id) {
+            return Vector<float>(m_rendered.m_data[id].m_color[0], m_rendered.m_data[id].m_color[1], m_rendered.m_data[id].m_color[2], m_rendered.m_data[id].m_color[3]);
+        }
+
+        /**
          * @brief Get the Model Amount object
          * 
          * @return uint32_t 
@@ -724,6 +721,12 @@ namespace qe
          */
         void __debug_public_info() {
             printf("Render: %d, Triangles: %d, Indices: %d\n", m_render, m_triangles, m_with_indices);
+        }
+
+        void __debug_texture_indices() {
+            for(auto i : m_rendered.m_texture_index) {
+                printf("%f\n", i);
+            }
         }
 
         void __debug_colors() {

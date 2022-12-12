@@ -3,6 +3,7 @@
 #define __C_HARD_CODED_STUFF_
 
 #include "../Renderer/r_renderer_helpers.hpp"
+#include "../Window/w_window.hpp"
 #include "c_engine_functions.hpp"
 
 namespace qe {
@@ -58,7 +59,13 @@ namespace qe {
     "in float TexID;\n"
     "out vec4 FragmentColor;\n"
     "void main() {\n"
-    "FragmentColor = texture(Textures[31], Tex) * Col;\n"
+    "int TID = int(TexID);\n"
+    "if(TID != 0) {\n"
+    "FragmentColor = texture(Textures[TID], Tex) * Col;\n"
+    "}\n"
+    "else {\n"
+    "FragmentColor = Col;\n"
+    "}\n"
     "}\n\0";
 
     const RenderedData cube = {
