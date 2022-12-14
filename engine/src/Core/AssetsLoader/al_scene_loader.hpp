@@ -1,10 +1,10 @@
 #pragma once
-#ifndef __AL_SCENE_LOADER_OLD_
-#define __AL_SCENE_LOADER_OLD_
+#ifndef __AL_SCENE_LOADER_
+#define __AL_SCENE_LOADER_
 
 #include <string>
 #include "../c_algorithms.hpp"
-#include <map>
+#include <unordered_map>
 #include <sstream>
 #include <fstream>
 #include <bit>
@@ -12,697 +12,143 @@
 const std::string __scene_file_extension__ = ".qescene";
 
 namespace qe {
-    enum ScenePossibleValuesTypes {
-        v_float,
-        v_double,
-        v_int,
-        v_uint,
-        v_char,
-        v_string,
-        v_bool,
-        v_null,
+    /*enum SceneFlags {
+        scene_separator = (uint16_t)0x00,
+
+        scene_begin = (uint16_t)0x0101,
+
+        scene_beg_name = (uint16_t)0x0201,
+
+        scene_var_beg_name = (uint16_t)0x0301,
+        scene_var_amount = (uint32_t)0x0303,
+        scene_var_float = (uint16_t)0x0304,
+        scene_var_double = (uint16_t)0x0305,
+        scene_var_int = (uint16_t)0x0306,
+        scene_var_uint = (uint16_t)0x0307,
+        scene_var_char = (uint16_t)0x0308,
+        scene_var_string = (uint16_t)0x0309,
+        scene_var_bool = (uint16_t)0x030a,
+        scene_var_value_separator = (uint16_t)0x030b,
+
+        scene_var_beg_value = (uint16_t)0x0401,
+        scene_var_beg_value = (uint16_t)0x0401,
+
+        scene_struct_beg = (uint16_t)0x0501,
+
+        scene_struct_name_beg = (uint16_t)0x0601,
+    };*/
+
+    struct SceneVariableValues {
+        std::vector<float> m_values;
     };
 
-    uint32_t invert_uint32_by_bytes(uint32_t const &number) {
-        return (number << 8 * 3) + ((number << 8 * 3) >> 8 * 1) + ((number << 8 * 3) >> 8 * 2) + ((number << 8 * 3) >> 8 * 3);
-    }
-
-    uint64_t invert_uint64_by_bytes(uint64_t const &number) {
-        return (number << 8 * 7) + ((number << 8 * 7) >> 8 * 1) + ((number << 8 * 7) >> 8 * 2) + ((number << 8 * 7) >> 8 * 3) + ((number << 8 * 7) >> 8 * 4) + ((number << 8 * 7) >> 8 * 5) + ((number << 8 * 7) >> 8 * 6) + ((number << 8 * 7) >> 8 * 7);
-    }
-
-    template<typename T>
-    T* convert_from_bits_little_endian(byte_t *value_bytes, size_t const &size, ScenePossibleValuesTypes const &type) {
-        std::vector<T> result;
-
-        byte_t bytes[size];
-
-        for(size_t i = 0; i < size / 8; i++) {
-            bytes[i * 8 + 0] = value_bytes[i * 8 + 7];
-            bytes[i * 8 + 1] = value_bytes[i * 8 + 6];
-            bytes[i * 8 + 2] = value_bytes[i * 8 + 5];
-            bytes[i * 8 + 3] = value_bytes[i * 8 + 4];
-            bytes[i * 8 + 4] = value_bytes[i * 8 + 3];
-            bytes[i * 8 + 5] = value_bytes[i * 8 + 2];
-            bytes[i * 8 + 6] = value_bytes[i * 8 + 1];
-            bytes[i * 8 + 7] = value_bytes[i * 8 + 0];
-        }
-
-        uint32_t value_little_endian_32[size / 4];
-        uint64_t value_little_endian_64[size / 8];
-
-        for(size_t i = 0; i < size / 4; i++) {
-            value_little_endian_32[i] += (uint32_t)bytes[i * 4 + 0];
-            value_little_endian_32[i] += (uint32_t)bytes[i * 4 + 1] << 8;
-            value_little_endian_32[i] += (uint32_t)bytes[i * 4 + 2] << 8 * 2;
-            value_little_endian_32[i] += (uint32_t)bytes[i * 4 + 3] << 8 * 3;
-        }
-
-        for(size_t i = 0; i < size / 8; i++) {
-            value_little_endian_64[i] += (uint32_t)bytes[i * 8 + 0];
-            value_little_endian_64[i] += (uint32_t)bytes[i * 8 + 1] << 8;
-            value_little_endian_64[i] += (uint32_t)bytes[i * 8 + 2] << 8 * 2;
-            value_little_endian_64[i] += (uint32_t)bytes[i * 8 + 3] << 8 * 3;
-            value_little_endian_64[i] += (uint32_t)bytes[i * 8 + 4] << 8 * 4;
-            value_little_endian_64[i] += (uint32_t)bytes[i * 8 + 5] << 8 * 5;
-            value_little_endian_64[i] += (uint32_t)bytes[i * 8 + 6] << 8 * 6;
-            value_little_endian_64[i] += (uint32_t)bytes[i * 8 + 7] << 8 * 7;
-        }
-        
-        switch(type) {
-            case v_float:
-                for(size_t i = 0; i < size / 4; i++) {
-                    result.push_back(std::bit_cast<float>(value_little_endian_32[i]));
-                }
-
-                break;
-
-            case v_double:
-                for(size_t i = 0; i < size / 8; i++) {
-                    result.push_back(std::bit_cast<double>(value_little_endian_64[i]));
-                }
-
-                break;
-
-            case v_int:
-                for(size_t i = 0; i < size / 4; i++) {
-                    result.push_back(std::bit_cast<int>(value_little_endian_32[i]));
-                }
-
-                break;
-
-            case v_uint:
-                for(size_t i = 0; i < size / 4; i++) {
-                    result.push_back(std::bit_cast<uint>(value_little_endian_32[i]));
-                }
-
-                break;
-
-            case v_char:
-                for(size_t i = 0; i < size; i++) {
-                    result.push_back(value_bytes[i]);
-                }
-
-                break;
-
-            case v_string:
-                for(size_t i = 0; i < size; i++) {
-                    result.push_back(value_bytes[i]);
-                }
-
-                break;
-
-            case v_bool:
-                for(size_t i = 0; i < size; i++) {
-                    result.push_back(value_bytes[i] != 0 ? true : false);
-                }
-
-                break;
-
-            default:
-
-                break;
-        }
-        
-        return result.data();
-    }
-
-    template<typename T>
-    uint64_t* convert_to_bits_uint64_little_endian(T *value, size_t const &size) {
-        std::vector<uint64_t> bytes64;
-
-        for(size_t i = 0; i < size; i++) {
-            uint64_t tmp;
-            std::memcpy(&tmp, &value[i], sizeof(value[i]));
-
-            bytes64.push_back(invert_uint64_by_bytes(tmp));
-        }
-        
-        return bytes64.data();
-    }
-
-    template<typename T>
-    uint32_t* convert_to_bits_uint32_little_endian(T *value, size_t const &size) {
-        std::vector<uint32_t> bytes32;
-
-        for(size_t i = 0; i < size; i++) {
-            uint64_t tmp;
-            std::memcpy(&tmp, &value[i], sizeof(value[i]));
-
-            bytes32.push_back(invert_uint32_by_bytes(tmp));
-        }
-        
-        return bytes32.data();
-    }
-
-    byte_t* convert_uint64_to_bytes(uint64_t const &bits) {
-        byte_t bytes[8];
-        
-        for(int i = 0; i < 8; i++) {
-            bytes[i] = (bits << 56 - (i * 8)) >> 56;
-        }
-
-        return bytes;
-    }
-
-    byte_t* convert_uint32_to_bytes(uint32_t const &bits) {
-        byte_t bytes[4];
-        
-        for(int i = 0; i < 4; i++) {
-            bytes[i] = (bits << 24 - (i * 8)) >> 24;
-        }
-
-        return bytes;
-    }
-
-    struct ScenePossibleValues {
-        union {
-            float m_flt[0x100];
-            double m_dbl[0x100];
-            int m_int[0x100];
-            uint m_uint[0x100];
-            char m_char[0x100];
-            char *m_string[0x100];
-            bool m_bool[0x100];
-        };
-
-        ScenePossibleValues() = default;
-
-        ScenePossibleValuesTypes m_values_type = v_null;
-        uint32_t m_scene_values_size = 0;
-        std::string m_var_name;
-
-        void add_value(std::string const &data, uint32_t string_size = 0) {
-            if(m_values_type == v_null) {
-                return;
-            }
-
-            std::stringstream ss(data.c_str());
-
-            if(m_scene_values_size < 0x100) {
-                switch(m_values_type) {
-                    case v_float:
-                        ss >> m_flt[m_scene_values_size];
-                        m_scene_values_size++;
-
-                        break;
-
-                    case v_double:
-                        ss >> m_dbl[m_scene_values_size];
-                        m_scene_values_size++;
-
-                        break;
-
-                    case v_int:
-                        ss >> m_int[m_scene_values_size];
-                        m_scene_values_size++;
-
-                        break;
-
-                    case v_uint:
-                        ss >> m_uint[m_scene_values_size];
-                        m_scene_values_size++;
-
-                        break;
-
-                    case v_char:
-                        ss >> m_char[m_scene_values_size];
-                        m_scene_values_size++;
-
-                        break;
-
-                    case v_string:
-                        m_string[m_scene_values_size] = new char[data.size()];
-                        m_string[m_scene_values_size] = (char*)data.data();
-                        m_scene_values_size++;
-
-                        break;
-
-                    case v_bool:
-                        m_bool[m_scene_values_size] = (data.c_str()[0] << 7) >> 7;
-                        m_scene_values_size++;
-
-                        break;
-
-                    default:
-                        break;
-                }
-            }
-        }
-
-        template<class T>
-        T operator[](uint32_t n) {
-            switch(m_values_type) {
-                case v_float:
-                    return m_flt[n];
-
-                    break;
-
-                case v_double:
-                    return m_dbl[n];
-
-                    break;
-
-                case v_int:
-                    return m_int[n];
-
-                    break;
-
-                case v_uint:
-                    return m_uint[n];
-
-                    break;
-
-                case v_char:
-                    return m_char[n];
-
-                    break;
-
-                case v_string:
-                    return m_string[n];
-
-                    break;
-
-                case v_bool:
-                    return m_bool[n];
-
-                    break;
-
-                default:
-                    break;
-            }
-
-            return (uint64_t)-1;
-        }
-
-        auto getElement(uint32_t n) {
-            switch(m_values_type) {
-                case v_float:
-                    return m_flt[n];
-
-                    break;
-
-                /*case v_double:
-                    return m_dbl[n];
-
-                    break;
-
-                case v_int:
-                    return &m_int[n];
-
-                    break;
-
-                case v_uint:
-                    return m_uint[n];
-
-                    break;
-
-                case v_char:
-                    return m_char[n];
-
-                    break;
-
-                case v_string:
-                    return m_string[n];
-
-                    break;
-
-                case v_bool:
-                    return m_bool[n];
-
-                    break;*/
-
-                default:
-                    break;
-            }
-        }
-
-        ~ScenePossibleValues() {}
-    };
-
-    struct SceneValuesStruct {
+    struct SceneStruct {
         std::string m_struct_name;
-        std::vector<ScenePossibleValues> m_scene_struct;
+        std::unordered_map<std::string, SceneVariableValues> m_struct_variables;
+    };
 
-        void add_scene_values(ScenePossibleValues values) {
-            m_scene_struct.push_back(values);
-        }
+    struct SceneInfo {
+        std::string m_scene_name;
+        std::vector<SceneStruct> m_scene_structs;
     };
 
     class Scene {
     private:
-        std::string m_scene_data;
-        std::string m_scene_name;
+        std::string m_scene;
+        std::string m_scene_path;
 
-        enum SceneFlags {
-            scene_separator = (uint16_t)0x00,
-
-            scene_begin = (uint16_t)0x0101,
-
-            scene_beg_name = (uint16_t)0x0201,
-
-            scene_var_beg_name = (uint16_t)0x0301,
-            scene_var_amount = (uint32_t)0x0303,
-            scene_var_float = (uint16_t)0x0304,
-            scene_var_double = (uint16_t)0x0305,
-            scene_var_int = (uint16_t)0x0306,
-            scene_var_uint = (uint16_t)0x0307,
-            scene_var_char = (uint16_t)0x0308,
-            scene_var_string = (uint16_t)0x0309,
-            scene_var_bool = (uint16_t)0x030a,
-            scene_var_value_separator = (uint16_t)0x030b,
-
-            scene_var_beg_value = (uint16_t)0x0401,
-
-            scene_struct_beg = (uint16_t)0x0501,
-
-            scene_struct_name_beg = (uint16_t)0x0601,
-        };
-
-        std::vector<SceneValuesStruct> m_scene_structs;
-
-        static std::string make_bits(SceneFlags flag) {
-            std::string _flag;
-            _flag += (char)(flag >> 8);
-            _flag += (char)((flag << 8) >> 8);
-
-            return _flag;
-        }
-
-        static char get_first(SceneFlags flag) {
-            return (char)((flag << 8) >> 8);
-        }
-
-        static char get_second(SceneFlags flag) {
-            return (char)(flag >> 8);
-        }
+        SceneInfo m_scene_info;
 
     public:
-        Scene(std::string const &scene_name) {
-            m_scene_name = scene_name;
+        void BeginScene(std::string scene_name) {
+            m_scene_path = scene_name + __scene_file_extension__;
 
-            std::ofstream f(scene_name + __scene_file_extension__, std::ios::binary);
-
-            f.close();
-
-            m_scene_data += make_bits(scene_begin);
-            m_scene_data += (char)scene_separator;
-            m_scene_data += make_bits(scene_beg_name);
-
-            for(auto name_ch : scene_name) {
-                m_scene_data += name_ch;
-            }
-
-            m_scene_data += (char)scene_separator;
-        }
-
-        Scene() = default;
-
-        void GenerateSceneFile() {
-            std::ofstream f(m_scene_name + __scene_file_extension__, std::ios::binary);
-
-            f.write(m_scene_data.c_str(), m_scene_data.size());
-
-            f.close(); 
-        }
-
-        template<class T>
-        static std::string GeneratePartSceneData(T const *data, uint32_t data_size, std::string const &variable_name) {
-            std::string _scene;
-
-            _scene += make_bits(scene_var_beg_name);
-            
-            for(auto name_ch : variable_name) {
-                _scene += name_ch;
-            }
-            
-            _scene += (char)scene_separator;
-            _scene += make_bits(scene_var_beg_value);
-
-            std::string var_data = std::to_string(data);
-
-            for(auto v : var_data) {
-                _scene += v;
-            }
-            
-            _scene += (char)scene_separator;
-
-            return _scene; 
-        }
-
-        void AddStructData(std::string const &struct_name) {
-            m_scene_data += make_bits(scene_struct_beg);
-            m_scene_data += (char)scene_separator;
-            m_scene_data += make_bits(scene_struct_name_beg);
-
-            for(auto ch : struct_name) {
-                m_scene_data += ch;
-            }
-
-            m_scene_data += (char)scene_separator;
-        }
-
-        template<class T>
-        void AddPartSceneData(T const *data, uint8_t const data_size, std::string const &variables_name, ScenePossibleValuesTypes const &var_type) {
-            m_scene_data += make_bits(scene_var_beg_name);
-            
-            for(auto name_ch : variables_name) {
-                m_scene_data += name_ch;
-            }
-            
-            m_scene_data += (char)scene_separator;
-
-            switch(var_type) {
-                case v_float:
-                    m_scene_data += make_bits(scene_var_float);
-
-                    break;
-
-                case v_double:
-                    m_scene_data += make_bits(scene_var_double);
-
-                    break;
-
-                case v_int:
-                    m_scene_data += make_bits(scene_var_int);
-
-                    break;
-
-                case v_uint:
-                    m_scene_data += make_bits(scene_var_uint);
-
-                    break;
-
-                case v_char:
-                    m_scene_data += make_bits(scene_var_char);
-
-                    break;
-
-                case v_string:
-                    m_scene_data += make_bits(scene_var_string);
-
-                    break;
-
-                case v_bool:
-                    m_scene_data += make_bits(scene_var_bool);
-
-                    break;
-
-                default:
-                    break;
-            }
-
-            m_scene_data += (char)scene_separator;
-
-            m_scene_data += make_bits(scene_var_amount);
-
-            m_scene_data += data_size;
-
-            m_scene_data += (char)scene_separator;
-            m_scene_data += make_bits(scene_var_beg_value);
-
-            uint64_t *values64 = new uint64_t[data_size];
-            uint32_t *values32 = new uint32_t[data_size];
-
-            if(sizeof(T) < 8) {
-                values32 = convert_to_bits_uint32_little_endian(data, data_size);
-            } 
-            else if(sizeof(T) == 8) {
-                values64 = convert_to_bits_uint64_little_endian(data, data_size);
-            }
-
-            for(uint32_t i = 0; i < data_size; i++) {
-                byte_t *bytes = new byte_t[sizeof(T) == 8 ? 8 : 4];
-                bytes = sizeof(T) == 8 ? convert_uint64_to_bytes(values64[i]) : convert_uint32_to_bytes(values32[i]);
-
-                for(int i = 0; i < (sizeof(T) == 8 ? 8 : 4); i++) {
-                    m_scene_data += bytes[i];
-                }
-
-                m_scene_data += (char)scene_separator;
-                m_scene_data += make_bits(scene_var_value_separator);
-
-                delete[] bytes;
-            }
-
-            delete[] values32;
-            delete[] values64;
-
-            /*for(uint8_t i = 0; i < data_size; i++) {
-                std::string var_data = std::to_string(data[i]);
-
-                for(auto v : var_data) {
-                    m_scene_data += v;
-                }
-
-                m_scene_data += (char)scene_separator;
-                m_scene_data += make_bits(scene_var_value_separator);
-            }*/
-
-            m_scene_data += (char)scene_separator;
-        }
-
-        // FIXME:
-        void ReadScene(std::string const &scene_name) {
-            std::ifstream f(scene_name + __scene_file_extension__, std::ios::binary | std::ios::ate);
-
-            std::string _scene;
-
-            _scene.resize(f.tellg());
-
-            f.seekg(std::ios::beg);
-
-            f.read(_scene.data(), _scene.size());
+            std::ofstream f(m_scene_path, std::ios::binary);
 
             f.close();
 
-            std::cout << _scene << std::endl;
+            m_scene += "SCENE " + scene_name + "\n";
 
-            bool scene_beginned = false;
-            bool separator_find = false;
-            bool value_to_convert_recording = false;
-            bool size_set = false;
-            uint32_t values_amount_in_variable = 0;
-            uint32_t current_value = 0;
-            uint32_t keyword_count;
-            std::string value_to_convert;
-
-            char keyword_buff[2] = {_scene.c_str()[0], _scene.c_str()[1]};
-
-            for(uint32_t i = 0; i < _scene.size(); i++) {
-                if(_scene.c_str()[i] == (char)scene_separator) {
-                    separator_find = true;
-                    value_to_convert_recording = false;
-                    keyword_count = 0;
-                    keyword_buff[0] = keyword_buff[1] = (char)0;
-                }
-
-                if(separator_find && keyword_count < 2) {
-                    keyword_buff[keyword_count] = _scene.c_str()[i + 1];
-                    keyword_count++;
-
-                    if(make_bits(scene_var_beg_name) == std::string(&keyword_buff[0]) + std::string(&keyword_buff[1])) {
-                        size_set = false;
-                    }
-                }
-
-                std::string keyword;
-                keyword += keyword_buff[0];
-                keyword += keyword_buff[1];
-
-                printf("0x%02x Key buffer: 0x%02x 0x%02x\n", _scene.c_str()[i], keyword_buff[0], keyword_buff[1]);
-
-                if(keyword_count > 1 || !scene_beginned) {
-                    if(keyword == make_bits(scene_begin)) {
-                        scene_beginned = true;
-                    }
-                    else if(keyword == make_bits(scene_beg_name)) {
-                        if(_scene.c_str()[i + 2] != (char)scene_separator) {
-                            m_scene_name += _scene.c_str()[i + 2];
-                        }
-                    }
-                    else if(keyword == make_bits(scene_var_beg_name)) {
-                        if(_scene.c_str()[i + 2] != (char)scene_separator) {
-                            if(!size_set) {
-                                m_scene_structs[m_scene_structs.size() - 1].m_scene_struct.resize(m_scene_structs[m_scene_structs.size() - 1].m_scene_struct.size() + 1);
-
-                                size_set = true;
-                            }
-                            m_scene_structs[m_scene_structs.size() - 1].m_scene_struct[m_scene_structs[m_scene_structs.size() - 1].m_scene_struct.size() - 1].m_var_name += _scene.c_str()[i + 2];
-                        }
-                    }
-                    else if(keyword == make_bits(scene_var_amount)) {
-                        values_amount_in_variable = (uint32_t)_scene.c_str()[i + 2];
-                    }
-                    else if(keyword == make_bits(scene_var_float)) {
-                        m_scene_structs[m_scene_structs.size() - 1].m_scene_struct[m_scene_structs[m_scene_structs.size() - 1].m_scene_struct.size() - 1].m_values_type = v_float;
-                    }
-                    else if(keyword == make_bits(scene_var_double)) {
-                        m_scene_structs[m_scene_structs.size() - 1].m_scene_struct[m_scene_structs[m_scene_structs.size() - 1].m_scene_struct.size() - 1].m_values_type = v_double;
-                    }
-                    else if(keyword == make_bits(scene_var_int)) {
-                        m_scene_structs[m_scene_structs.size() - 1].m_scene_struct[m_scene_structs[m_scene_structs.size() - 1].m_scene_struct.size() - 1].m_values_type = v_int;
-                    }
-                    else if(keyword == make_bits(scene_var_uint)) {
-                        m_scene_structs[m_scene_structs.size() - 1].m_scene_struct[m_scene_structs[m_scene_structs.size() - 1].m_scene_struct.size() - 1].m_values_type = v_uint;
-                    }
-                    else if(keyword == make_bits(scene_var_char)) {
-                        m_scene_structs[m_scene_structs.size() - 1].m_scene_struct[m_scene_structs[m_scene_structs.size() - 1].m_scene_struct.size() - 1].m_values_type = v_char;
-                    }
-                    else if(keyword == make_bits(scene_var_string)) {
-                        m_scene_structs[m_scene_structs.size() - 1].m_scene_struct[m_scene_structs[m_scene_structs.size() - 1].m_scene_struct.size() - 1].m_values_type = v_string;
-                    }
-                    else if(keyword == make_bits(scene_var_bool)) {
-                        m_scene_structs[m_scene_structs.size() - 1].m_scene_struct[m_scene_structs[m_scene_structs.size() - 1].m_scene_struct.size() - 1].m_values_type = v_bool;
-                    }
-                    else if(keyword == make_bits(scene_var_value_separator)) {
-                        if(!value_to_convert_recording && keyword_count > 1) {
-                            m_scene_structs[m_scene_structs.size() - 1].m_scene_struct[m_scene_structs[m_scene_structs.size() - 1].m_scene_struct.size() - 1].add_value(value_to_convert);
-                            float val = m_scene_structs[m_scene_structs.size() - 1].m_scene_struct[m_scene_structs[m_scene_structs.size() - 1].m_scene_struct.size() - 1].getElement(m_scene_structs[m_scene_structs.size() - 1].m_scene_struct[m_scene_structs[m_scene_structs.size() - 1].m_scene_struct.size() - 1].m_scene_values_size);
-
-                            std::cout << "Pushed value " << val << " Value " << value_to_convert.c_str() << std::endl;
-                        }
-
-                        current_value++;
-
-                        if(current_value < values_amount_in_variable && keyword_count > 1) {
-                            value_to_convert += _scene.c_str()[i + 2];
-
-                            value_to_convert_recording = true;
-                        }
-                    }
-                    else if(keyword == make_bits(scene_var_beg_value)) {
-                        current_value = 0;
-
-                        if(current_value < values_amount_in_variable && keyword_count > 1) {
-                            value_to_convert += _scene.c_str()[i + 2];
-
-                            value_to_convert_recording = true;
-                        }
-                    }
-                    else if(keyword == make_bits(scene_struct_beg)) {
-                        m_scene_structs.push_back(SceneValuesStruct());
-                        keyword_buff[0] = keyword_buff[1] = (char)0;
-                    }
-                    else if(keyword == make_bits(scene_struct_name_beg)) {
-                        if(_scene.c_str()[i + 2] != (char)scene_separator) {
-                            m_scene_structs[m_scene_structs.size() - 1].m_struct_name += _scene.c_str()[i + 2];
-                        }
-                    }
-                }
-            }
+            m_scene_info.m_scene_name = scene_name;
         }
 
-        std::string getSceneData() { return m_scene_data; }
+        void AddStruct(std::string struct_name) {
+            m_scene += "STRUCT " + struct_name + "\n";
+            m_scene_info.m_scene_structs.resize(m_scene_info.m_scene_structs.size() + 1);
+            m_scene_info.m_scene_structs[m_scene_info.m_scene_structs.size() - 1].m_struct_name = struct_name;
+        }
 
-        std::string getSceneName() { return m_scene_name; }
+        template<class T>
+        void AddValue(std::string name, T *values, uint32_t const &values_amount) {
+            m_scene += "VAR " + name + " " + std::to_string(values_amount) + "\n";
+            SceneVariableValues vals;
+            vals.m_values.resize(values_amount);
 
-        std::vector<SceneValuesStruct>* getSceneValues() { return &m_scene_structs; }
+            for(int i = 0; i < values_amount; i++) {
+                m_scene += std::to_string(vals.m_values[i]) + " ";
+            }
 
-        void setSceneData(std::string const &scene_data) { m_scene_data = scene_data; }
+            m_scene += "\n";
+        }
 
-        void addSceneData(std::string const &partial_scene_data) { m_scene_data += partial_scene_data; }
+        void GenerateScene() {
+            std::ofstream f(m_scene_path, std::ios::binary);
+
+            f.write(m_scene.c_str(), m_scene.size());
+
+            f.close();
+        }
+
+        void ReadScene(std::string scene_path) {
+            m_scene_path = scene_path + __scene_file_extension__;
+
+            std::ifstream f(m_scene_path, std::ios::binary);
+
+            std::string line;
+
+            bool variables = false;
+            size_t variables_size = 0;
+
+            while(!f.eof()) {
+                getline(f, line);
+
+                if(line.find("SCENE ") == 0) {
+                    m_scene_info.m_scene_name = line.c_str() + 6;
+                }
+                else if(line.find("STRUCT ") == 0) {
+                    m_scene_info.m_scene_structs.resize(m_scene_info.m_scene_structs.size() + 1);
+                    m_scene_info.m_scene_structs[m_scene_info.m_scene_structs.size() - 1].m_struct_name = line.c_str() + 7;
+                }
+                else if(line.find("VAR ") == 0) {
+                    variables = true;
+                    std::stringstream ss(line.c_str() + 4);
+
+                    uint32_t size;
+                    std::string name;
+
+                    ss.seekg(std::ios::beg);
+
+                    ss >> name >> size;
+                    ss.seekg(ss.tellg());
+
+                    SceneVariableValues values;
+
+                    values.m_values.resize(size);
+
+                    for(uint32_t i = 0; i < size; i++) {
+                        ss.seekg(ss.tellg());
+                        ss >> values.m_values[i];
+                    }
+
+                    m_scene_info.m_scene_structs[m_scene_info.m_scene_structs.size() - 1].m_struct_variables.insert(std::make_pair(name, values));
+                }
+            }
+
+            f.close();
+        }
+
+        SceneInfo* GetScenePtr() { return &m_scene_info; }
     };
 }
 
-#endif 
+#endif

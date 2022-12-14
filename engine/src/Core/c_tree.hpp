@@ -10,18 +10,20 @@
 #include <iterator>
 #include <memory>    
 #include <initializer_list>
+#include "c_data_structs.hpp"
 
 namespace qe {
-    template<class _Tp, class _Alloc = std::allocator<_Tp>>
+    template<class _Tp, class _Alloc = Allocator<_Tp>>
     class Tree {
     private:
         typedef _Tp type;
         typedef _Alloc alloc;
+        typedef Allocator<Tree> tree_alloc;
 
         uint64_t _size_tree = 0;
         uint64_t _size_values = 0;
-        std::allocator<_Tp> _values;
-        std::allocator<Tree> _tree;
+        alloc _values;
+        tree_alloc _tree;
 
     public:
         struct iterator {
@@ -54,7 +56,7 @@ namespace qe {
             friend iterator& operator-=(const iterator &r, const difference_type &n) { return r += -n; }
             friend iterator operator-(const iterator &i, const difference_type &n) { iterator temp = i; return temp -= n; }
 
-            //friend difference_type operator-(const iterator &a, const iterator &b) { if() }
+            friend difference_type operator-(const iterator &a, const iterator &b) { return (*a - *b); }
 
             reference operator[](uint64_t n) { return *(_ptr + n); }
 
@@ -95,13 +97,13 @@ namespace qe {
                 return r;
             }
 
-            friend const_iterator operator+(const const_iterator &a, const difference_type &n) { if(a + n == n + a) { iterator temp = a; return temp += n; } }
-            friend const_iterator operator+(const difference_type &n, const const_iterator &a) { if(a + n == n + a) { iterator temp = a; return temp += n; } }
+            friend const_iterator operator+(const const_iterator &a, const difference_type &n) { if(a + n == n + a) { const_iterator temp = a; return temp += n; } }
+            friend const_iterator operator+(const difference_type &n, const const_iterator &a) { if(a + n == n + a) { const_iterator temp = a; return temp += n; } }
 
             friend const_iterator& operator-=(const const_iterator &r, const difference_type &n) { return r += -n; }
             friend const_iterator operator-(const const_iterator &i, const difference_type &n) { const_iterator temp = i; return temp -= n; }
 
-            //friend difference_type operator-(const iterator &a, const iterator &b) { if() }
+            friend difference_type operator-(const const_iterator &a, const const_iterator &b) { return (*a - *b); }
 
             reference operator[](uint64_t n) { return *(_ptr + n); }
 

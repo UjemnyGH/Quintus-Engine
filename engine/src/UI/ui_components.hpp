@@ -9,12 +9,29 @@
 
 namespace qe {
     namespace ui {
+        struct UIAxisHelper {
+            float position[2];
+            float scale[2];
+            float rotation;
+
+            UIAxisHelper(float px = 0.0f, float py = 0.0f, float sx = 1.0f, float sy = 1.0, float r = 0.0f) {
+                position[0] = px;
+                position[1] = py;
+
+                scale[0] = sx;
+                scale[1] = sy;
+
+                rotation = r;
+            }
+        };
+
         struct UIRendered {
             std::vector<float> m_vertices;
             std::vector<float> m_colors;
             std::vector<float> m_texture_coordinates;
             std::vector<float> m_used_texture;
             std::vector<std::string> m_object_names;
+            std::vector<UIAxisHelper> m_axis_helpers;
             uint32_t m_size;
             uint32_t m_objects_amount = 0;
         };
@@ -163,6 +180,7 @@ namespace qe {
                 std::copy(m_rendered.m_texture_coordinates.begin(), m_rendered.m_texture_coordinates.end(), std::back_inserter(data.m_texture_coordinates));
                 std::copy(m_rendered.m_used_texture.begin(), m_rendered.m_used_texture.end(), std::back_inserter(data.m_used_texture));
                 m_rendered.m_object_names.push_back(object_name + std::to_string(m_rendered.m_objects_amount));
+                m_rendered.m_axis_helpers.push_back(UIAxisHelper());
 
                 m_rendered.m_size = (m_rendered.m_vertices.size() / 2) / m_rendered.m_objects_amount;
             }
@@ -173,12 +191,35 @@ namespace qe {
                 m_rendered.m_colors.erase(m_rendered.m_colors.begin() + (id * m_rendered.m_size * 4), m_rendered.m_colors.begin() + (id * m_rendered.m_size * 4) + (m_rendered.m_size * 4));
                 m_rendered.m_texture_coordinates.erase(m_rendered.m_texture_coordinates.begin() + (id * m_rendered.m_size * 2), m_rendered.m_texture_coordinates.begin() + (id * m_rendered.m_size * 2) + (m_rendered.m_size * 2));
                 m_rendered.m_used_texture.erase(m_rendered.m_used_texture.begin() + (id * m_rendered.m_size), m_rendered.m_used_texture.begin() + (id * m_rendered.m_size) + m_rendered.m_size);
+                m_rendered.m_axis_helpers.erase(m_rendered.m_axis_helpers.begin() + id);
                 m_rendered.m_objects_amount--;
                 m_rendered.m_size = (m_rendered.m_vertices.size() / 2) / m_rendered.m_objects_amount;
             }
 
             void SetPosition(uint32_t id, float x, float y) {
+                if(m_rendered.m_axis_helpers[id].position[0] != x || m_rendered.m_axis_helpers[id].position[1] != y) {
+                    for(uint32_t i = m_rendered.m_size * id; i < m_rendered.m_size * id + m_rendered.m_size; i++) {
 
+                    }
+                }
+            }
+
+            void SetColor(uint32_t id, float r, float g, float b, float a = 1.0f) {
+                if(m_rendered.m_colors[m_rendered.m_size * id * 4 + 0] != r && m_rendered.m_colors[m_rendered.m_size * id * 4 + 1] != g && m_rendered.m_colors[m_rendered.m_size * id * 4 + 2] != b && m_rendered.m_colors[m_rendered.m_size * id * 4 + 3] != a) {
+                    for(uint32_t i = m_rendered.m_size * id; i < m_rendered.m_size * id + m_rendered.m_size; i++) {
+                        m_rendered.m_colors[i * 4 + 0] = r;
+                        m_rendered.m_colors[i * 4 + 1] = g;
+                        m_rendered.m_colors[i * 4 + 2] = b;
+                        m_rendered.m_colors[i * 4 + 3] = a;
+                    }
+
+                    m_vao.Bind();
+
+                    m_col.Bind(m_rendered.m_colors, 0, 4);
+
+                    m_vao.Unbind();
+
+                }
             }
         };
 

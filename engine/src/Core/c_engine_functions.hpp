@@ -30,8 +30,8 @@ namespace qe
      * 
      * @param msg 
      */
-    void qe_term(std::string msg) {
-        std::cerr << "Termination: " << msg << std::endl;
+    inline void qe_term(std::string msg) noexcept {
+        std::cerr << "Termination File: "  << __FILE__ << " : "  << msg << std::endl;
 
         exit(msg.size());
     }
@@ -41,8 +41,8 @@ namespace qe
      * 
      * @param msg 
      */
-    void qe_warn(std::string msg) {
-        std::cerr << "Warning: " << msg << std::endl;
+    inline void qe_warn(std::string msg) noexcept {
+        std::cerr << "Warning File: " << __FILE__ << " : "  << msg << std::endl;
     }
 
     /**
@@ -50,8 +50,8 @@ namespace qe
      * 
      * @param msg 
      */
-    void qe_req_term(std::string msg) {
-        std::cerr << "REQUESTED TERMINATION: " << msg << std::endl;
+    inline void qe_req_term(std::string msg) noexcept {
+        std::cerr << "REQUESTED TERMINATION File: " << __FILE__ << " : " << msg << std::endl;
 
         exit(msg.length());
     }

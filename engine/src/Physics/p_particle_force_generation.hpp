@@ -10,16 +10,16 @@ namespace qe {
         virtual void updateForce(Particle* particle, real duration) {}
     };
 
+    struct ParticleForceRegistration
+    {
+        Particle *m_particle;
+        ParticleForceGenerator *m_force_gen;
+
+        bool operator==(ParticleForceRegistration const &p) { return p.m_particle == m_particle && p.m_force_gen == m_force_gen; }
+    };
+
     class ParticleForceRegistry {
     protected:
-        struct ParticleForceRegistration
-        {
-            Particle *m_particle;
-            ParticleForceGenerator *m_force_gen;
-
-            bool operator==(ParticleForceRegistration const &p) { return p.m_particle == m_particle && p.m_force_gen == m_force_gen; }
-        };
-
         std::vector<ParticleForceRegistration> m_registrations;
 
     public:
@@ -37,17 +37,19 @@ namespace qe {
 
         void Clear() {
             m_registrations.clear();
+
+            if(!m_registrations.empty()) {
+                qe::qe_warn("Particle Force Registry: m_registrations cleard incorrectly!!");
+            }
         }
 
-        void UpdateForces(real duration, bool integrate = true) {
-            auto end_iter = m_registrations.end();
+        void UpdateForces(real duration) {
+            if(m_registrations.end() != m_registrations.begin() + m_registrations.size()) {
+                qe::qe_warn("Particle Force Registry: sizes are uncorrect!");
+            }
 
-            for(auto i = m_registrations.begin(); i != end_iter; i++) {
-                i->m_force_gen->updateForce(i->m_particle, duration);
-
-                if(integrate) {
-                    i->m_particle->integrate(duration);
-                }
+            for(size_t i = 0; i < m_registrations.size(); i++) {
+                m_registrations[i].m_force_gen->updateForce(m_registrations[i].m_particle, duration);
             }
         }
     };

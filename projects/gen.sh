@@ -11,7 +11,9 @@ cd $PRNAME
 
 echo "echo \"To add more files edit run.sh file and add yours files to g++\"
 echo \"Compiling ${PRNAME}\"
-g++ -m64 -O3 -std=c++2a -o ${PRNAME} ../../engine/vendor/glad/glad.c ../../engine/vendor/imgui/*.cpp src/*.cpp -lGL -lglfw -lpthread -lm -lvulkan -llua
+g++ -m64 -O3 -std=c++2a -c src/*.cpp -lGL -lglfw -lpthread -lm -lvulkan
+g++ -m64 -O3 -std=c++2a -o ${PRNAME} ../../engine/vendor/glad/*.o ../../engine/vendor/imgui/*.o ../../engine/vendor/lua/*.o *.o -lGL -lglfw -lpthread -lm -lvulkan
+rm ./*.o
 echo \"Running ${PRNAME}\"
 ./${PRNAME}
 " > run.sh

@@ -2,7 +2,9 @@
 #ifndef __S_CORE_
 #define __S_CORE_
 
-#include <lua.hpp>
+#include "../../vendor/lua/lua.h"
+#include "../../vendor/lua/lualib.h"
+#include "../../vendor/lua/lauxlib.h"
 #include <iostream>
 #include <fstream>
 #include "../Core/c_layers.hpp"

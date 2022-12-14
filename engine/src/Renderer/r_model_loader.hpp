@@ -21,7 +21,7 @@ namespace qe
             std::ifstream f(gltf_path, std::ios::binary);
 
             if(f.bad() || f.fail() || !f.is_open()) {
-                std::cerr << "Cannot open file: " << gltf_path << std::endl;
+                qe::qe_warn("Cannot open file: " + gltf_path);
             }
 
             std::string line;
@@ -86,7 +86,7 @@ namespace qe
             std::ifstream f(path, std::ios::binary);
 
             if(f.bad() || f.fail() || !f.is_open()) {
-                std::cerr << "Bad file: " << path << '\n';
+                qe::qe_warn("Cannot open file: " + path);
 
                 return data;
             }

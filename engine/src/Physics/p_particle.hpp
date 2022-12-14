@@ -9,6 +9,9 @@ namespace qe {
     class Particle {
     protected:
         real m_inverse_mass = 1.0;
+        real m_create_time;
+        real m_delete_time = 10.0;
+        bool m_delete_on_time = false;
 
     public:
         Vector<real> m_position = Vector<real>((real)0.0);
@@ -42,6 +45,15 @@ namespace qe {
         void addForce(Vector<real> force) {
             m_force += force;
         }
+
+        void deleteOnTime(bool state = false) { m_delete_on_time = state; }
+
+        void setDeleteTime(real create_time, real delete_time = (real)10.0) {
+            m_create_time = create_time;
+            m_delete_time = delete_time;
+        }
+
+        bool deleteParticle(real current_time) { return m_create_time + m_delete_time < current_time && m_delete_on_time; }
     };
 }
 

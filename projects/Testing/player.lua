@@ -5,7 +5,7 @@ function Player.Start()
 end
 
 function Player.Update()
-    print(Camera.mouseX)
+    print("Update")
 end
 
 function Player.FixedUpdate()

@@ -24,6 +24,8 @@ format, knowledge about topic or functioning something really matters.
 3. GLM
 4. stb_image
 5. stb_truetype
+6. stb_rect_pack
+7. Lua API (I added it here becouse it exist in vendor file)
 
 ##### ImGui library:
 [ImGui](https://github.com/ocornut/imgui)
