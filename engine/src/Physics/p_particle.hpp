@@ -27,6 +27,8 @@ namespace qe {
 
         real getMass() { return 1.0 / m_inverse_mass; }
 
+        real getInverseMass() { return m_inverse_mass; }
+
         void integrate(real duration) {
             m_position += m_velocity * duration;
 

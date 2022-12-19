@@ -14,6 +14,7 @@
 #include "../Core/c_time.hpp"
 #include "../Renderer/r_renderer.hpp"
 #include "../Scripting/s_core.hpp"
+#include "../Renderer/VulkanRenderer/vr_core.hpp"
 #include <thread>
 #include <chrono>
 
@@ -157,6 +158,8 @@ namespace qe {
     private:
         LayerHandler m_layer_handler;
         GLFWwindow* m_window;
+        Instance m_vulkan_instance;
+        
         bool m_v_sync = false;
         std::string m_title;
 
@@ -257,34 +260,44 @@ namespace qe {
          * @brief Runs window
          * 
          */
-        void run() {
+        void run(bool run_on_vulkan = false) {
             __initialize_lua();
 
             Awake();
 
             glfwInit();
 
-            glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 4);
-            glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 5);
-            glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
-
-            m_window = glfwCreateWindow(m_width, m_height, m_title.c_str(), nullptr, nullptr);
-
-            if(!m_window) {
-                qe_term("Window couldn`t be shown!");
+            if(!run_on_vulkan) {
+                glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 4);
+                glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 5);
+                glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
             }
-
-            glfwMakeContextCurrent(m_window);
-
-            if(!gladLoadGLLoader((GLADloadproc)glfwGetProcAddress)) {
-                qe_term("No GLAD!");
+            else {
+                glfwWindowHint(GLFW_CLIENT_API, GLFW_NO_API);
             }
+                m_window = glfwCreateWindow(m_width, m_height, m_title.c_str(), nullptr, nullptr);
 
-            glEnable(GL_DEPTH_TEST);
-            glDepthFunc(GL_LESS);
+                if(!m_window) {
+                    qe_term("Window couldn`t be shown!");
+                }
 
-            glEnable(GL_BLEND);
-            glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+                glfwMakeContextCurrent(m_window);
+
+            if(!run_on_vulkan) {
+                if(!gladLoadGLLoader((GLADloadproc)glfwGetProcAddress)) {
+                    qe_term("No GLAD!");
+                }
+
+                glEnable(GL_DEPTH_TEST);
+                glDepthFunc(GL_LESS);
+
+                glEnable(GL_BLEND);
+                glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+            }
+            else {
+                m_vulkan_instance.CreateInstance();
+                m_vulkan_instance.CreatePresentationSurface(m_window);
+            }
 
             AddLayer(&time);
 
@@ -301,7 +314,12 @@ namespace qe {
             while(!glfwWindowShouldClose(m_window)) {
                 m_window_closed = glfwWindowShouldClose(m_window);
 
-                glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+                if(!run_on_vulkan) {
+                    glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+                }
+                else {
+
+                }
 
                 m_layer_handler.AutoUpdate();
 
@@ -394,7 +412,7 @@ namespace qe {
          * @return true 
          * @return false 
          */
-        bool getKeyPress(Keys key, KeyState key_state) { return glfwGetKey(m_window, key) == key_state; }
+        bool getKeyPress(Keys key, KeyState key_state = KeyState::PRESS) { return glfwGetKey(m_window, key) == key_state; }
 
         /**
          * @brief Set the Cursor State
@@ -416,6 +434,8 @@ namespace qe {
          * @return float 
          */
         float getFixedUpdateTimeIntervalInSec() { return 1.0f / (float)m_fixed_update_per_second; }
+
+        Instance* getVulkanInstanceClassPtr() { return &m_vulkan_instance; }
     };
 
     typedef QE_Window Window;

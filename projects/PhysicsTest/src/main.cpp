@@ -131,6 +131,11 @@ void Game::Update() {
 
     qe::g_view = glm::lookAt(glm::vec3(player_position.x, player_position.y, player_position.z), glm::vec3(player_position.x, player_position.y, player_position.z) + glm::vec3(player_direction.x, player_direction.y, player_direction.z), glm::vec3(0.0f, 1.0f, 0.0f));
 
+    for(uint32_t i = 0; i < bullets_renderer.GetModelAmount(); i++) {
+        std::future<void> bullet_pos_change_async = std::async(SetBulletsPos, bullets[i], i);
+        //SetBulletsPos(bullets[i], i);
+    }
+
     if(bullets_binding) {
         bullets_renderer.BindToBuffers();
 
@@ -163,8 +168,9 @@ void Game::LateUpdate() {
         bullets[bullets.size() - 1].addForce(player_direction * 1000.0f);
         bullets[bullets.size() - 1].setMass(1.0f);
         bullets[bullets.size() - 1].setDeleteTime(time.GetTime(), 2.0f);
+        bullets[bullets.size() - 1].deleteOnTime(true);
         
-        bullets_force_registry.Add(&bullets[bullets.size() - 1], &bullet_gravity);
+        //bullets_force_registry.Add(&bullets[bullets.size() - 1], &bullet_gravity);
     }
     
     Inputs();
@@ -173,14 +179,16 @@ void Game::LateUpdate() {
 void Game::FixedUpdate() {
     float duration = getFixedUpdateTimeIntervalInSec();
 
-    bullets_force_registry.UpdateForces(duration);
+    //bullets_force_registry.UpdateForces(duration);
 
     for(int i = 0; i < bullets.size(); i++) {
         if(bullets[i].deleteParticle(fixed_time)) {
-            bullets_force_registry.Remove(&bullets[i], &bullet_gravity);
+            //bullets_force_registry.Remove(&bullets[i], &bullet_gravity);
             bullets.erase(bullets.begin() + i);
             bullets_renderer.RemoveModel(i, false);
         }
+
+        bullet_gravity.updateForce(&bullets[i], duration);
 
         bullets[i].integrate(duration);
     }

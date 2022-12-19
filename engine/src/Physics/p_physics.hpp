@@ -6,6 +6,7 @@
 #include "p_particle.hpp"
 #include "p_particle_force_generation.hpp"
 #include "p_physics_definitions.hpp"
+#include "p_particle_contacts.hpp"
 #include "p_raycast.hpp"
 #include "p_rigidbody.hpp"
 
