@@ -3,6 +3,7 @@
 #define __M_MATH_CORE_
 
 #include "m_vector.hpp"
+//#include "m_quaterion.hpp"
 
 namespace qe {
     namespace math {

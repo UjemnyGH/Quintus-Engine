@@ -716,6 +716,65 @@ namespace qe
         uint32_t GetModelAmount() { return m_rendered.m_data_sizes.size(); }
 
         /**
+         * @brief Get the Shader ID
+         * 
+         * @return uint32_t 
+         */
+        uint32_t GetShader() { return m_sh.m_id; }
+
+        /**
+         * @brief Bind vertex array object
+         * 
+         */
+        void BindVAO() { m_vao.Bind(); }
+
+        /**
+         * @brief Unbind vertex array object
+         * 
+         */
+        void UnbindVAO() { m_vao.Unbind(); }
+
+        void SetInt1(std::string name, int v0) {
+            m_vao.Bind();
+
+            glUniform1i(glGetUniformLocation(m_sh.m_id, name.c_str()), v0);
+
+            m_vao.Unbind();
+        }
+
+        void SetFloat1(std::string name, float v0) {
+            m_vao.Bind();
+
+            glUniform1f(glGetUniformLocation(m_sh.m_id, name.c_str()), v0);
+
+            m_vao.Unbind();
+        }
+
+        void SetFloat2(std::string name, float v0, float v1) {
+            m_vao.Bind();
+
+            glUniform2f(glGetUniformLocation(m_sh.m_id, name.c_str()), v0, v1);
+
+            m_vao.Unbind();
+        }
+
+        void SetFloat3(std::string name, float v0, float v1, float v2) {
+            m_vao.Bind();
+
+            glUniform3f(glGetUniformLocation(m_sh.m_id, name.c_str()), v0, v1, v2);
+
+            m_vao.Unbind();
+        }
+
+        void SetFloat4(std::string name, float v0, float v1, float v2, float v3) {
+            m_vao.Bind();
+
+            glUniform4f(glGetUniformLocation(m_sh.m_id, name.c_str()), v0, v1, v2, v3);
+
+            m_vao.Unbind();
+        }
+
+        /**
          * @brief Debug info on public bool variables (m_render, m_with_indices, m_triangles)
          * 
          */
@@ -735,6 +794,7 @@ namespace qe
                 fflush(stdout);
             }
         }
+
 
         /**
          * @brief Ends renderer

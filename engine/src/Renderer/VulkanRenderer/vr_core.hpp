@@ -12,6 +12,7 @@
 #include <set>
 #include <limits>
 #include <algorithm>
+#include <array>
 
 #ifdef __linux
 #define VK_USE_PLATFORM_XLIB_KHW

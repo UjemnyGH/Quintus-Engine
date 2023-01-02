@@ -32,7 +32,7 @@ namespace qe {
 
         void set_radiuses(qe::Vector<float> _radiuses) { m_size = _radiuses; }
 
-        virtual bool is_colliding(ColliderComponent &_component) { return false;}
+        virtual bool is_colliding(ColliderComponent &_component) { return false; }
     };
 
     class AABB : public ColliderComponent {

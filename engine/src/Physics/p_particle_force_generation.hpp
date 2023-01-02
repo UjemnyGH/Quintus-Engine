@@ -59,6 +59,8 @@ namespace qe {
         Vector<real> m_gravity;
 
     public:
+        ParticleGravity() = default;
+
         ParticleGravity(Vector<real> const &gravity) : m_gravity(gravity) {}
 
         void SetData(Vector<real> const &gravity) {
@@ -224,6 +226,8 @@ namespace qe {
         real m_rest_length;
 
     public:
+        ParticleBungee() = default;
+
         ParticleBungee(Particle *other, real spring_constant, real rest_length) : m_other(other), m_spring_constant(spring_constant), m_rest_length(rest_length) {}
 
         void SetData(Particle *other, real spring_constant, real rest_length) {
